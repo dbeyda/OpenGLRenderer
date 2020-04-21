@@ -28,7 +28,7 @@ int main(void)
 
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(960, 540, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(540, 540, "Hello World", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -44,6 +44,9 @@ int main(void)
     */
 
     glfwSwapInterval(1);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
 
     if (glewInit() != GLEW_OK) {
         std::cout << "Error" << std::endl;
@@ -51,47 +54,64 @@ int main(void)
 
     std::cout << glGetString(GL_VERSION) << std::endl;
     {
-        float positions[] = {
-            100.0f, 100.0f, 0.0f, 0.0f,
-            804.0f, 100.0f, 1.0f, 0.0f,
-            804.0f, 335.0f, 1.0f, 1.0f,
-            100.0f, 335.0f, 0.0, 1.0f
-        };
 
+        float positions [] = {
+            // front        | colors
+            -1.0, -1.0,  1.0, 1.0, 0.0, 0.0,
+             1.0, -1.0,  1.0, 0.0, 1.0, 0.0,
+             1.0,  1.0,  1.0, 0.0, 0.0, 1.0,
+            -1.0,  1.0,  1.0, 1.0, 1.0, 1.0,
+            // back         | colors
+            -1.0, -1.0, -1.0, 1.0, 0.0, 0.0,
+             1.0, -1.0, -1.0,  0.0, 1.0, 0.0,
+             1.0,  1.0, -1.0, 0.0, 0.0, 1.0,
+            -1.0,  1.0, -1.0, 1.0, 1.0, 1.0
+        };
+        
         unsigned int indices[] = {
-            0, 1, 2,
-            2, 3, 0
+            // front
+             0, 1, 2,
+             2, 3, 0,
+             // right
+             1, 5, 6,
+             6, 2, 1,
+             // back
+             7, 6, 5,
+             5, 4, 7,
+             // left
+             4, 0, 3,
+             3, 7, 4,
+             // bottom
+             4, 5, 1,
+             1, 0, 4,
+             // top
+             3, 2, 6,
+             6, 7, 3
         };
-
+        
         GLCall(glEnable(GL_BLEND));
         GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
         VertexArray va;
-        VertexBuffer vb(positions, 4 * 4 * sizeof(float));
+        VertexBuffer vb(positions, 8 * 6 * sizeof(float));
 
         VertexBufferLayout layout;
-        layout.Push<float>(2);
-        layout.Push<float>(2);
+        layout.Push<float>(3);
+        layout.Push<float>(3);
         va.AddBuffer(vb, layout);
 
-        IndexBuffer ib(indices, 6);
+        IndexBuffer ib(indices, 6 * 6);
 
-        glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(100, 100, 0));
+        glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, -2.0f, 2.0f);
+        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
 
         glm::mat4 mvp = proj * view * model;
 
         Shader shader("res/shaders/Basic.shader");
         shader.Bind();
-        shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
         shader.SetUniformMat4f("u_MVP", mvp);
 
-        
-        Texture texture("res/textures/logo_white.png");
-        texture.Bind();
-        shader.SetUniform1i("u_Texture", 0);
-        
         va.Unbind();
         vb.Unbind();
         ib.Unbind();
@@ -99,23 +119,30 @@ int main(void)
 
         Renderer renderer;
 
-        float r = 0.0f;
-        float increment = 0.02f;
+        float rotation = 0.0f;
+        float increment = 1.0f;
 
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+            model = glm::scale(model, glm::vec3(0.5f));
+            model = glm::rotate(model, glm::radians(rotation), glm::vec3(0, 1, 0));
+            model = glm::rotate(model, glm::radians(rotation), glm::vec3(0, 1, 1));
+            mvp = proj * view * model;
+
             /* Render here */
             renderer.Clear();
             
             shader.Bind();
-            shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+            shader.SetUniformMat4f("u_MVP", mvp);
 
             renderer.Draw(va, ib, shader);
-            
-            if ((r < 0.0f) || (r > 1.0f))
+            /*
+            if ((rotation < 0.0f) || (rotation > 90.0f))
                 increment *= -1;
-            r += increment;
+            */
+            rotation += increment;
 
             /* Swap front and back buffers */
             glfwSwapBuffers(window);
