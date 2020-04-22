@@ -26,7 +26,6 @@ int main(void)
     if (!glfwInit())
         return -1;
 
-
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(540, 540, "Hello World", NULL, NULL);
     if (!window)
@@ -63,7 +62,7 @@ int main(void)
             -1.0,  1.0,  1.0, 1.0, 1.0, 1.0,
             // back         | colors
             -1.0, -1.0, -1.0, 1.0, 0.0, 0.0,
-             1.0, -1.0, -1.0,  0.0, 1.0, 0.0,
+             1.0, -1.0, -1.0, 0.0, 1.0, 0.0,
              1.0,  1.0, -1.0, 0.0, 0.0, 1.0,
             -1.0,  1.0, -1.0, 1.0, 1.0, 1.0
         };
@@ -102,34 +101,31 @@ int main(void)
 
         IndexBuffer ib(indices, 6 * 6);
 
-        glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, -2.0f, 2.0f);
-        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+        glm::mat4 proj = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 10.0f);
+        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 3.0f, 1.0f),  // eye
+                           glm::vec3(0.0f, 0.0f, -5.0f), // center
+                           glm::vec3(0.0f, 1.0f, 0.0f)   // up
+        );
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5));
 
-        glm::mat4 mvp = proj * view * model;
 
         Shader shader("res/shaders/Basic.shader");
-        shader.Bind();
-        shader.SetUniformMat4f("u_MVP", mvp);
 
         va.Unbind();
         vb.Unbind();
         ib.Unbind();
-        shader.Unbind();
 
         Renderer renderer;
 
         float rotation = 0.0f;
-        float increment = 1.0f;
+        float increment = 0.5f;
 
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
-            model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-            model = glm::scale(model, glm::vec3(0.5f));
-            model = glm::rotate(model, glm::radians(rotation), glm::vec3(0, 1, 0));
-            model = glm::rotate(model, glm::radians(rotation), glm::vec3(0, 1, 1));
-            mvp = proj * view * model;
+            glm::mat4 rotatedModel = glm::rotate(model, glm::radians(rotation), glm::vec3(0, 1, 0));
+            rotatedModel = glm::rotate(rotatedModel, glm::radians(rotation), glm::vec3(0, 1, 1));
+            glm::mat4 mvp = proj * view * rotatedModel;
 
             /* Render here */
             renderer.Clear();
@@ -138,10 +134,7 @@ int main(void)
             shader.SetUniformMat4f("u_MVP", mvp);
 
             renderer.Draw(va, ib, shader);
-            /*
-            if ((rotation < 0.0f) || (rotation > 90.0f))
-                increment *= -1;
-            */
+
             rotation += increment;
 
             /* Swap front and back buffers */
