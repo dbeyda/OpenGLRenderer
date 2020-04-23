@@ -1,0 +1,11 @@
+newmtl Default
+Ns 100.000
+d 1.00000
+illum 2
+Kd 0.90000 0.90000 0.90000
+Ka 0.10000 0.10000 0.10000
+Ks 0.30000 0.30000 0.30000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Ka stones.jpg
+map_Kd stones.jpg
+map_bump stones_norm.jpg
