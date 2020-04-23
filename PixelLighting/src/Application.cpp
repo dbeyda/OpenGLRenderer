@@ -21,10 +21,15 @@
 
 int main(void)
 {
-    std::string objPath = "res/models/golfball/golfball.obj";
-//    std::string texPath = "res/models/formula 1/Substance SpecGloss/Right ones/formula1_DefaultMaterial_Diffuse.png";
+    std::string objPath = "";
+    objPath = "res/models/golfball/golfball.obj";
+    // objPath = "res/models/formula 1/Formula 1 mesh.obj";
+    // objPath = "res/models/stones/stones.obj";
+
     std::string texPath = "";
-    unsigned int texFormat = GL_RGBA;
+    // texPath = "res/models/formula 1/Substance SpecGloss/Right ones/formula1_DefaultMaterial_Diffuse.png";
+    // texPath = "res/models/stones/stones.jpg";
+    unsigned int texFormat = GL_RGB;
 
     Obj obj(objPath);
     obj.Load();
@@ -76,20 +81,24 @@ int main(void)
         IndexBuffer ib(obj.indices.data(), obj.indices.size());
 
         glm::mat4 proj = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 5000.0f);
-        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.0f),  // eye
+        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f),  // eye
                            glm::vec3(0.0f, 0.0f, 0.0f), // center
                            glm::vec3(0.0f, 1.0f, 0.0f)   // up
         );
         glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, -0.5f, 0));
         //model = glm::scale(model, glm::vec3(10.0f));
 
+        Texture texture(texPath, texFormat);
+
         if (texPath.size())
         {
-            Texture texture(texPath, texFormat);
+            texture.Load();
             texture.Bind();
         }
 
+        // Shader shader("res/shaders/BasicTexture.shader");
         Shader shader("res/shaders/Phong.shader");
+
 
         va.Unbind();
         vb.Unbind();
