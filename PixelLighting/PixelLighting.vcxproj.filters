@@ -450,7 +450,8 @@
     <None Include="src\vendor\glm\gtx\wrap.inl">
       <Filter>Arquivos de Cabeçalho</Filter>
     </None>
-    <None Include="res\shaders\ObjLoader.shader" />
+    <None Include="res\shaders\BasicTexture.shader" />
+    <None Include="res\shaders\Phong.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VertexBuffer.h">

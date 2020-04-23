@@ -21,9 +21,10 @@
 
 int main(void)
 {
-    std::string objPath = "res/models/stones/stones.obj";
-    std::string texPath = "res/models/stones/stones.jpg";
-    unsigned int texFormat = GL_RGB;
+    std::string objPath = "res/models/golfball/golfball.obj";
+//    std::string texPath = "res/models/formula 1/Substance SpecGloss/Right ones/formula1_DefaultMaterial_Diffuse.png";
+    std::string texPath = "";
+    unsigned int texFormat = GL_RGBA;
 
     Obj obj(objPath);
     obj.Load();
@@ -33,6 +34,10 @@ int main(void)
     /* Initialize the library */
     if (!glfwInit())
         return -1;
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(600, 600, "Hello World", NULL, NULL);
@@ -44,11 +49,6 @@ int main(void)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
-
-    /*
-    Using OpenGL Compatibility Profile
-    TheCherno already changed to OpenGL Core Profile on video "Vertex Arrays in OpenGL"
-    */
 
     glfwSwapInterval(1);
     glEnable(GL_DEPTH_TEST);
@@ -76,17 +76,20 @@ int main(void)
         IndexBuffer ib(obj.indices.data(), obj.indices.size());
 
         glm::mat4 proj = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 5000.0f);
-        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f),  // eye
+        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.0f),  // eye
                            glm::vec3(0.0f, 0.0f, 0.0f), // center
                            glm::vec3(0.0f, 1.0f, 0.0f)   // up
         );
         glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, -0.5f, 0));
         //model = glm::scale(model, glm::vec3(10.0f));
 
-        Texture texture(texPath, texFormat);
-        texture.Bind();
+        if (texPath.size())
+        {
+            Texture texture(texPath, texFormat);
+            texture.Bind();
+        }
 
-        Shader shader("res/shaders/ObjLoader.shader");
+        Shader shader("res/shaders/Phong.shader");
 
         va.Unbind();
         vb.Unbind();
