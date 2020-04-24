@@ -18,6 +18,7 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
@@ -32,7 +33,7 @@ void processInput(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
 
-// camera
+// camera 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
@@ -43,8 +44,21 @@ float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
 // lightning
-float ambientLight = 1.0f;
+float ambientStrength = 0.03f;
 glm::vec4 ambientLightColor(1.0f);
+
+float ka = 0.0;
+float kd = 8.0;
+
+float kc = 2;
+float kl = 0.01;
+float kq = 0.000010;
+
+int sexp = 40;
+
+
+float sDif = 0.5;
+float mDif = 0.5;
 
 
 int main(void)
@@ -137,7 +151,7 @@ int main(void)
         Renderer renderer;
 
         float rotation = 0.0f;
-        float increment = 0.5f;
+        float increment = 0.3f;
 
         ImGui::CreateContext();
         ImGui_ImplGlfwGL3_Init(window, true);
@@ -160,17 +174,32 @@ int main(void)
             glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
             glm::mat4 view = camera.GetViewMatrix();
             glm::mat4 rotatedModel = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 1, 0));
-            rotatedModel = glm::rotate(rotatedModel, glm::radians(rotation), glm::vec3(0, 1, 1));
+            rotatedModel = glm::rotate(rotatedModel, glm::radians(rotation), glm::vec3(0, 1, 0));
+            glm::mat4 mvp = projection * view * rotatedModel;
+            glm::mat4 mv = view * rotatedModel;
+            glm::mat4 invTransMvp = glm::inverseTranspose(mvp);
 
-            glm::mat4 mvp = projection* view * rotatedModel;
+            glm::mat4 invTransMv = glm::inverseTranspose(view * rotatedModel);
 
             /* Render here */
             renderer.Clear();
             
             shader.Bind();
             shader.SetUniformMat4f("u_MVP", mvp);
-            shader.SetUniform1f("u_ambientLight", ambientLight);
+            shader.SetUniformMat4f("u_MV", mv);
+            shader.SetUniformMat4f("u_proj", projection);
+            shader.SetUniformMat4f("u_invTransMV", invTransMv);
+
+            shader.SetUniform1f("u_ambientStrength", ambientStrength);
             shader.SetUniform4f("u_ambientLightColor", ambientLightColor.r, ambientLightColor.g, ambientLightColor.b, 1.0f);
+            shader.SetUniform1f("u_ka", ka);
+            shader.SetUniform1f("u_kd", kd);
+            shader.SetUniform1f("u_kc", kc);
+            shader.SetUniform1f("u_kl", kl);
+            shader.SetUniform1f("u_kq", kq);
+            shader.SetUniform1i("u_sexp", sexp);
+
+
 
             renderer.Draw(va, ib, shader);
 
@@ -178,21 +207,35 @@ int main(void)
 
             ImGui_ImplGlfwGL3_NewFrame();
             {
-                static float f = 0.0f;
+                ImGui::Begin("Camera");
                 ImGui::Text("FPS (%.1f FPS)", ImGui::GetIO().Framerate);
                 ImGui::Text("Camera position");                           // Display some text (you can use a format string too)
                 ImGui::SliderFloat3("x y z", glm::value_ptr(camera.Position), -5000.0f, 5000.0f, nullptr, 5.0f);
                 if (ImGui::Button("Reset Camera"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
                     camera.Position = glm::vec3(0);
-                ImGui::Text("Lighting");
-                ImGui::Text("Ambient Light Intensity");
-                ImGui::SameLine();
-                ImGui::SliderFloat("", &ambientLight, 0.0f, 1.0f);
-                ImGui::Text("Ambient Light Color");
-                ImGui::SameLine();
-                ImGui::ColorEdit3("", glm::value_ptr(ambientLightColor)); // Edit 3 floats representing a color
+                ImGui::End();
 
-            }
+                ImGui::Begin("Lighting");
+                ImGui::SliderFloat("Ambient Light Intensity", &ambientStrength, 0.0f, 1.0f);
+                ImGui::ColorEdit3("Ambient Light Color", glm::value_ptr(ambientLightColor)); // Edit 3 floats representing a color
+                ImGui::InputFloat("ka", &ka, 0.1, 0.5);
+                ImGui::InputFloat("kd", &kd, 0.1, 0.5);
+                ImGui::Text("Light Source");
+                ImGui::InputFloat("kc", &kc, 0.2, 0.5);
+                ImGui::InputFloat("kl", &kl, 0.05, 0.1);
+                ImGui::InputFloat("kq", &kq, 0.005, 0.01);
+                ImGui::SliderInt("sexp", &sexp, 0, 128);
+
+                ImGui::End();
+/*
+                ImGui::Text("mDif");
+                ImGui::SameLine();
+                ImGui::SliderFloat("", &mDif, 0, 1);
+                ImGui::Text("sDif");
+                ImGui::SameLine();
+                ImGui::SliderFloat("", &sDif, 0, 1);
+  */
+  }
             ImGui::Render();
             ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
