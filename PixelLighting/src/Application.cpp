@@ -18,6 +18,7 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
 
@@ -28,8 +29,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1024;
+const unsigned int SCR_HEIGHT = 768;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -40,6 +41,10 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
+
+// lightning
+float ambientLight = 1.0f;
+glm::vec4 ambientLightColor(1.0f);
 
 
 int main(void)
@@ -122,8 +127,8 @@ int main(void)
             texture.Bind();
         }
 
-        Shader shader("res/shaders/BasicTexture.shader");
-        // Shader shader("res/shaders/Phong.shader");
+        // Shader shader("res/shaders/BasicTexture.shader");
+        Shader shader("res/shaders/Phong.shader");
 
         va.Unbind();
         vb.Unbind();
@@ -164,6 +169,8 @@ int main(void)
             
             shader.Bind();
             shader.SetUniformMat4f("u_MVP", mvp);
+            shader.SetUniform1f("u_ambientLight", ambientLight);
+            shader.SetUniform4f("u_ambientLightColor", ambientLightColor.r, ambientLightColor.g, ambientLightColor.b, 1.0f);
 
             renderer.Draw(va, ib, shader);
 
@@ -172,16 +179,19 @@ int main(void)
             ImGui_ImplGlfwGL3_NewFrame();
             {
                 static float f = 0.0f;
-                static int counter = 0;
-                ImGui::Text("Hello, world!");                           // Display some text (you can use a format string too)
-                ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
-
-                if (ImGui::Button("Button"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
-                    counter++;
+                ImGui::Text("FPS (%.1f FPS)", ImGui::GetIO().Framerate);
+                ImGui::Text("Camera position");                           // Display some text (you can use a format string too)
+                ImGui::SliderFloat3("x y z", glm::value_ptr(camera.Position), -5000.0f, 5000.0f, nullptr, 5.0f);
+                if (ImGui::Button("Reset Camera"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
+                    camera.Position = glm::vec3(0);
+                ImGui::Text("Lighting");
+                ImGui::Text("Ambient Light Intensity");
                 ImGui::SameLine();
-                ImGui::Text("counter = %d", counter);
+                ImGui::SliderFloat("", &ambientLight, 0.0f, 1.0f);
+                ImGui::Text("Ambient Light Color");
+                ImGui::SameLine();
+                ImGui::ColorEdit3("", glm::value_ptr(ambientLightColor)); // Edit 3 floats representing a color
 
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             }
             ImGui::Render();
             ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
