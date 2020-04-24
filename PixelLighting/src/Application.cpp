@@ -54,7 +54,10 @@ float kc = 2;
 float kl = 0.01;
 float kq = 0.000010;
 
-int sexp = 40;
+int sexp = 30;
+
+float mshi = 48.0;
+float ks = 5.0;
 
 
 float sDif = 0.5;
@@ -198,8 +201,8 @@ int main(void)
             shader.SetUniform1f("u_kl", kl);
             shader.SetUniform1f("u_kq", kq);
             shader.SetUniform1i("u_sexp", sexp);
-
-
+            shader.SetUniform1f("u_mshi", mshi);
+            shader.SetUniform1f("u_ks", ks);
 
             renderer.Draw(va, ib, shader);
 
@@ -225,6 +228,8 @@ int main(void)
                 ImGui::InputFloat("kl", &kl, 0.05, 0.1);
                 ImGui::InputFloat("kq", &kq, 0.005, 0.01);
                 ImGui::SliderInt("sexp", &sexp, 0, 128);
+                ImGui::SliderFloat("mshi", &mshi, 0, 600);
+                ImGui::SliderFloat("ks", &ks, 0, 10);
 
                 ImGui::End();
 /*
