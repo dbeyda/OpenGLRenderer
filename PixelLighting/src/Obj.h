@@ -4,12 +4,11 @@
 
 class Obj
 {
-private:
+public:
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string filepath;
-public:
     std::vector<float> positions;
     std::vector<unsigned int> indices;
 

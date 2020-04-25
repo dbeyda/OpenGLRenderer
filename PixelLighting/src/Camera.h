@@ -17,7 +17,7 @@ enum Camera_Movement {
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 2.5f;
+const float SPEED = 3.5f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
@@ -70,7 +70,7 @@ public:
     {
         float velocity = MovementSpeed * deltaTime;
         if (running)
-            velocity *= 100;
+            velocity *= 40;
         if (direction == FORWARD)
             Position += Front * velocity;
         if (direction == BACKWARD)

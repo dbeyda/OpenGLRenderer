@@ -30,8 +30,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
 // settings
-const unsigned int SCR_WIDTH = 1024;
-const unsigned int SCR_HEIGHT = 768;
+unsigned int SCR_WIDTH = 1024;
+unsigned int SCR_HEIGHT = 768;
 
 // camera 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -48,16 +48,16 @@ float ambientStrength = 0.03f;
 glm::vec4 ambientLightColor(1.0f);
 
 float ka = 0.0;
-float kd = 8.0;
+float kd = 4.6;
 
-float kc = 2;
+float kc = 6;
 float kl = 0.01;
-float kq = 0.000010;
+float kq = 0.005;
 
-int sexp = 30;
+int sexp = 37;
 
-float mshi = 48.0;
-float ks = 5.0;
+float mshi = 61.0;
+float ks = 3.0;
 
 
 float sDif = 0.5;
@@ -68,13 +68,13 @@ int main(void)
 {
     std::string objPath = "";
     objPath = "res/models/golfball/golfball.obj";
-    objPath = "res/models/formula 1/Formula 1 mesh.obj";
+    // objPath = "res/models/formula 1/Formula 1 mesh.obj";
     // objPath = "res/models/stones/stones.obj";
 
     std::string texPath = "";
-    texPath = "res/models/formula 1/Substance SpecGloss/Right ones/formula1_DefaultMaterial_Diffuse.png";
+    // texPath = "res/models/formula 1/Substance SpecGloss/Right ones/formula1_DefaultMaterial_Diffuse.png";
     // texPath = "res/models/stones/stones.jpg";
-    unsigned int texFormat = GL_RGB;
+    // texPath = "res/models/golfball/golfball.png";
 
     glm::vec3 cameraPos =       glm::vec3(0.0f, 0.0f, 5.0f);
     glm::vec3 cameraFront =     glm::vec3(0.0f, 0.0f, -1.0f);
@@ -136,16 +136,39 @@ int main(void)
 
         IndexBuffer ib(obj.indices.data(), obj.indices.size());
 
+        // Shader shader("res/shaders/BasicTexture.shader");
+        Shader shader("res/shaders/PhongBumpMap.shader");
+        shader.Bind();
+        shader.SetUniform1i("u_hasAmbientTexture", 0);
+        shader.SetUniform1i("u_hasDiffuseTexture", 0);
+        shader.SetUniform1i("u_hasBumpTexture", 0);
 
-        Texture texture(texPath, texFormat);
-        if (texPath.size())
+        Texture ambientTexture;
+        if (obj.materials.size() && obj.materials[0].ambient_texname.size())
         {
-            texture.Load();
-            texture.Bind();
+            ambientTexture.Load(obj.materials[0].ambient_texname);
+            shader.SetUniform1i("u_hasAmbientTexture", 1);
+            shader.SetUniform1i("AmbientTexture", 0);
+            ambientTexture.Bind();
         }
 
-        // Shader shader("res/shaders/BasicTexture.shader");
-        Shader shader("res/shaders/Phong.shader");
+        Texture diffuseTexture;
+        if (obj.materials.size() && obj.materials[0].diffuse_texname.size())
+        {
+            diffuseTexture.Load(obj.materials[0].diffuse_texname, 1);
+            shader.SetUniform1i("u_hasDiffuseTexture", 1);
+            shader.SetUniform1i("DiffuseTexture", 1);
+            diffuseTexture.Bind();
+        }
+
+        Texture bumpTexture;
+        if (obj.materials.size() && obj.materials[0].bump_texname.size());
+        {
+            bumpTexture.Load(obj.materials[0].bump_texname, 2);
+            shader.SetUniform1i("u_hasBumpTexture", 1);
+            shader.SetUniform1i("BumpTexture", 2);
+            bumpTexture.Bind();
+        }
 
         va.Unbind();
         vb.Unbind();
@@ -292,6 +315,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
+    SCR_HEIGHT = (unsigned int) height;
+    SCR_WIDTH = (unsigned int) width;
     glViewport(0, 0, width, height);
 }
 
@@ -320,3 +345,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
 }
+
+/* ----------------------- auxiliary functions -------------------------*/
+

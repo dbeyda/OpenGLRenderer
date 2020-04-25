@@ -1,5 +1,5 @@
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "Obj.h"
+#include "Obj.h";
 
 
 Obj::Obj(const std::string& path)

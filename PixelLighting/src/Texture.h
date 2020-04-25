@@ -9,13 +9,13 @@ private:
 	std::string m_FilePath;
 	unsigned char* m_LocalBuffer;
 	int m_Width, m_Height, m_BPP;
-	unsigned int m_Format;
+	unsigned int m_Slot;
 public:
-	Texture(const std::string& path, unsigned int format);
+	Texture();
 	~Texture();
 
-	void Load();
-	void Bind(unsigned int slot = 0) const;
+	void Load(const std::string& path, unsigned int slot = 0);
+	void Bind() const;
 	void Unbind();
 
 	inline int getWidth() const { return m_Width;  }
