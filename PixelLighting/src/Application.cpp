@@ -29,6 +29,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
+unsigned int useBumpTexture = 0;
+
 // settings
 unsigned int SCR_WIDTH = 1024;
 unsigned int SCR_HEIGHT = 768;
@@ -43,32 +45,28 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-// lightning
+// lighting
 float ambientStrength = 0.03f;
 glm::vec4 ambientLightColor(1.0f);
 
-float ka = 0.0;
-float kd = 4.6;
-
-float kc = 6;
+float kc = 2;
 float kl = 0.01;
 float kq = 0.005;
-
 int sexp = 37;
 
+// material properties
 float mshi = 61.0;
 float ks = 3.0;
-
-
-float sDif = 0.5;
-float mDif = 0.5;
+float ka = 0.0;
+float kd = 4.6;
+int ilum = 2;
 
 
 int main(void)
 {
     std::string objPath = "";
-    objPath = "res/models/golfball/golfball.obj";
-    // objPath = "res/models/stones/stones.obj";
+    // objPath = "res/models/golfball/golfball.obj";
+    objPath = "res/models/stones/stones.obj";
     // objPath = "res/models/formula 1/Formula 1 mesh.obj";
 
     std::string texPath = "";
@@ -166,11 +164,20 @@ int main(void)
         if (obj.materials.size() && obj.materials[0].bump_texname.size());
         {
             bumpTexture.Load(obj.materials[0].bump_texname, 2);
+            useBumpTexture = 1;
             shader.SetUniform1i("u_hasBumpTexture", 1);
             shader.SetUniform1i("BumpTexture", 2);
             bumpTexture.Bind();
         }
+        if (obj.materials.size())
+        {
+            tinyobj::material_t& mat = obj.materials[0];
+            mshi = mat.shininess;
+            ka = mat.ambient[0];
+            kd = mat.diffuse[0];
+            ks = mat.specular[0];
 
+        }
         va.Unbind();
         vb.Unbind();
         ib.Unbind();
@@ -178,7 +185,7 @@ int main(void)
         Renderer renderer;
 
         float rotation = 0.0f;
-        float increment = 0.1f;
+        float increment = 0.3f;
 
         ImGui::CreateContext();
         ImGui_ImplGlfwGL3_Init(window, true);
@@ -214,9 +221,6 @@ int main(void)
             shader.Bind();
             shader.SetUniformMat4f("u_MVP", mvp);
             shader.SetUniformMat4f("u_MV", mv);
-            shader.SetUniformMat4f("u_model", rotatedModel);
-            shader.SetUniformMat4f("u_view", view);
-            shader.SetUniformMat4f("u_proj", projection);
             shader.SetUniformMat4f("u_invTransMV", invTransMv);
 
             shader.SetUniform1f("u_ambientStrength", ambientStrength);
@@ -229,6 +233,8 @@ int main(void)
             shader.SetUniform1i("u_sexp", sexp);
             shader.SetUniform1f("u_mshi", mshi);
             shader.SetUniform1f("u_ks", ks);
+            shader.SetUniform1i("u_ilum", ilum);
+            shader.SetUniform1i("u_hasBumpTexture", useBumpTexture);
 
             renderer.Draw(va, ib, shader);
 
@@ -244,18 +250,25 @@ int main(void)
                     camera.Position = glm::vec3(0);
                 ImGui::End();
 
-                ImGui::Begin("Lighting");
+                ImGui::Begin("Visuals Properties");
                 ImGui::SliderFloat("Ambient Light Intensity", &ambientStrength, 0.0f, 1.0f);
                 ImGui::ColorEdit3("Ambient Light Color", glm::value_ptr(ambientLightColor)); // Edit 3 floats representing a color
-                ImGui::InputFloat("ka", &ka, 0.1, 0.5);
-                ImGui::InputFloat("kd", &kd, 0.1, 0.5);
-                ImGui::Text("Light Source");
+                
+                ImGui::Text("\nLight Source:");
                 ImGui::InputFloat("kc", &kc, 0.2, 0.5);
                 ImGui::InputFloat("kl", &kl, 0.05, 0.1);
                 ImGui::InputFloat("kq", &kq, 0.005, 0.01);
                 ImGui::SliderInt("sexp", &sexp, 0, 128);
+                
+                ImGui::Text("\nMaterial:");
                 ImGui::SliderFloat("mshi", &mshi, 0, 600);
                 ImGui::SliderFloat("ks", &ks, 0, 10);
+                ImGui::SliderFloat("kd", &kd, 0, 10);
+                ImGui::SliderFloat("ka", &ka, 0, 10);
+                
+                ImGui::Text("\nOther:");
+                ImGui::SliderFloat("rotationSpeed", &increment, 0, 40);
+
 
                 ImGui::End();
 /*
@@ -311,6 +324,10 @@ void processInput(GLFWwindow* window)
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         firstMouse = true;
     }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
+        useBumpTexture = 0;
+    else
+        useBumpTexture = 1;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

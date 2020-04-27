@@ -109,7 +109,7 @@ void Obj::Load()
             shapes[s].mesh.material_ids[f];
         }
     }
-    NormalizeTangents(stride, 8);
+    NormalizeTangents(stride, 3, 8);
 }
 
 void Obj::FixNegativeZeros(std::vector<float>& vec, int s, int n)
@@ -119,23 +119,31 @@ void Obj::FixNegativeZeros(std::vector<float>& vec, int s, int n)
             vec[i] = 0.0f;
 }
 
-void Obj::NormalizeTangents(int stride, int firstPos)
+void Obj::NormalizeTangents(int stride, int normalOffset, int tangentOffset)
 {
     for (int i = 0; i < positions.size(); i+=stride)
     {
+        glm::vec3 normal = glm::vec3(
+            positions[i + normalOffset],
+            positions[i + normalOffset + 1],
+            positions[i + normalOffset + 2]
+        );
         glm::vec3 tangent = glm::vec3(
-            positions[i + firstPos],
-            positions[i + firstPos + 1],
-            positions[i + firstPos + 2]
+            positions[i + tangentOffset],
+            positions[i + tangentOffset + 1],
+            positions[i + tangentOffset + 2]
             );
-        tangent = glm::normalize(tangent);
-        positions[i + firstPos]     = tangent.x;
-        positions[i + firstPos + 1] = tangent.y;
-        positions[i + firstPos + 2] = tangent.z;
+        // fixing averaged tangent to be ortogonal to normal of the vertex
+        tangent = glm::normalize(tangent - normal * glm::dot(normal, tangent));
+        positions[i + tangentOffset]     = tangent.x;
+        positions[i + tangentOffset + 1] = tangent.y;
+        positions[i + tangentOffset + 2] = tangent.z;
+        
+        /*
     std::cout << "new tangent for vertex " << i / stride << ": " << tangent.x
         << ", " << tangent.y
         << ", " << tangent.z << std::endl;
-
+        */
     }
 }
 

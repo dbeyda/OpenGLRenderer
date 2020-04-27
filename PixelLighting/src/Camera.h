@@ -70,7 +70,7 @@ public:
     {
         float velocity = MovementSpeed * deltaTime;
         if (running)
-            velocity *= 40;
+            velocity *= 20;
         if (direction == FORWARD)
             Position += Front * velocity;
         if (direction == BACKWARD)

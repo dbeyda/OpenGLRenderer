@@ -6,7 +6,7 @@ class Obj
 {
 private:
     void FixNegativeZeros(std::vector<float>& vec, int i, int n);
-    void NormalizeTangents(int, int);
+    void NormalizeTangents(int, int, int);
 public:
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
