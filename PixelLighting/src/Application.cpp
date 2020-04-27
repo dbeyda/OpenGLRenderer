@@ -68,13 +68,13 @@ int main(void)
 {
     std::string objPath = "";
     objPath = "res/models/golfball/golfball.obj";
-    // objPath = "res/models/formula 1/Formula 1 mesh.obj";
     // objPath = "res/models/stones/stones.obj";
+    // objPath = "res/models/formula 1/Formula 1 mesh.obj";
 
     std::string texPath = "";
-    // texPath = "res/models/formula 1/Substance SpecGloss/Right ones/formula1_DefaultMaterial_Diffuse.png";
     // texPath = "res/models/stones/stones.jpg";
     // texPath = "res/models/golfball/golfball.png";
+    // texPath = "res/models/formula 1/Substance SpecGloss/Right ones/formula1_DefaultMaterial_Diffuse.png";
 
     glm::vec3 cameraPos =       glm::vec3(0.0f, 0.0f, 5.0f);
     glm::vec3 cameraFront =     glm::vec3(0.0f, 0.0f, -1.0f);
@@ -129,9 +129,10 @@ int main(void)
         VertexBuffer vb(obj.positions.data() , obj.positions.size() * sizeof(float));
 
         VertexBufferLayout layout;
-        layout.Push<float>(3);
-        layout.Push<float>(3);
-        layout.Push<float>(2);
+        layout.Push<float>(3); // position
+        layout.Push<float>(3); // normal vector
+        layout.Push<float>(2); // texture uv
+        layout.Push<float>(3); // tangent vector
         va.AddBuffer(vb, layout);
 
         IndexBuffer ib(obj.indices.data(), obj.indices.size());
@@ -177,7 +178,7 @@ int main(void)
         Renderer renderer;
 
         float rotation = 0.0f;
-        float increment = 0.3f;
+        float increment = 0.1f;
 
         ImGui::CreateContext();
         ImGui_ImplGlfwGL3_Init(window, true);
@@ -199,8 +200,8 @@ int main(void)
 
             glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
             glm::mat4 view = camera.GetViewMatrix();
-            glm::mat4 rotatedModel = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 1, 0));
-            rotatedModel = glm::rotate(rotatedModel, glm::radians(rotation), glm::vec3(0, 1, 0));
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-0.5, 0, 0));
+            glm::mat4 rotatedModel = glm::rotate(model, glm::radians(rotation), glm::vec3(1, 0, 0));
             glm::mat4 mvp = projection * view * rotatedModel;
             glm::mat4 mv = view * rotatedModel;
             glm::mat4 invTransMvp = glm::inverseTranspose(mvp);
@@ -213,6 +214,8 @@ int main(void)
             shader.Bind();
             shader.SetUniformMat4f("u_MVP", mvp);
             shader.SetUniformMat4f("u_MV", mv);
+            shader.SetUniformMat4f("u_model", rotatedModel);
+            shader.SetUniformMat4f("u_view", view);
             shader.SetUniformMat4f("u_proj", projection);
             shader.SetUniformMat4f("u_invTransMV", invTransMv);
 
