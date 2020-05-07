@@ -46,8 +46,8 @@ float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
 // lighting
-float ambientStrength = 0.03f;
-glm::vec4 ambientLightColor(1.0f);
+float globalLightStrength = 0.03f;
+glm::vec4 globalLightColor(1.0f);
 
 float kc = 2;
 float kl = 0.01;
@@ -68,11 +68,6 @@ int main(void)
     // objPath = "res/models/golfball/golfball.obj";
     objPath = "res/models/stones/stones.obj";
     // objPath = "res/models/formula 1/Formula 1 mesh.obj";
-
-    std::string texPath = "";
-    // texPath = "res/models/stones/stones.jpg";
-    // texPath = "res/models/golfball/golfball.png";
-    // texPath = "res/models/formula 1/Substance SpecGloss/Right ones/formula1_DefaultMaterial_Diffuse.png";
 
     glm::vec3 cameraPos =       glm::vec3(0.0f, 0.0f, 5.0f);
     glm::vec3 cameraFront =     glm::vec3(0.0f, 0.0f, -1.0f);
@@ -135,7 +130,6 @@ int main(void)
 
         IndexBuffer ib(obj.indices.data(), obj.indices.size());
 
-        // Shader shader("res/shaders/BasicTexture.shader");
         Shader shader("res/shaders/PhongBumpMap.shader");
         shader.Bind();
         shader.SetUniform1i("u_hasAmbientTexture", 0);
@@ -207,13 +201,18 @@ int main(void)
 
             glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
             glm::mat4 view = camera.GetViewMatrix();
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-0.5, 0, 0));
+            
+            // Loaded Obj
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
             glm::mat4 rotatedModel = glm::rotate(model, glm::radians(rotation), glm::vec3(1, 0, 0));
             glm::mat4 mvp = projection * view * rotatedModel;
             glm::mat4 mv = view * rotatedModel;
-            glm::mat4 invTransMvp = glm::inverseTranspose(mvp);
-
             glm::mat4 invTransMv = glm::inverseTranspose(view * rotatedModel);
+
+            // Light
+            glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 5));
+            glm::mat4 lightMv = view * lightModel;
+            glm::vec3 mvLightPos = lightMv * glm::vec4(0, 0, 0, 1);
 
             /* Render here */
             renderer.Clear();
@@ -222,9 +221,10 @@ int main(void)
             shader.SetUniformMat4f("u_MVP", mvp);
             shader.SetUniformMat4f("u_MV", mv);
             shader.SetUniformMat4f("u_invTransMV", invTransMv);
+            shader.SetUniform3f("u_mvLightPos", mvLightPos.x, mvLightPos.y, mvLightPos.z);
 
-            shader.SetUniform1f("u_ambientStrength", ambientStrength);
-            shader.SetUniform4f("u_ambientLightColor", ambientLightColor.r, ambientLightColor.g, ambientLightColor.b, 1.0f);
+            shader.SetUniform4f("u_globalLightColor", globalLightColor.r, globalLightColor.g, globalLightColor.b, 1.0f);
+            shader.SetUniform1f("u_globalLightStrength", globalLightStrength);
             shader.SetUniform1f("u_ka", ka);
             shader.SetUniform1f("u_kd", kd);
             shader.SetUniform1f("u_kc", kc);
@@ -233,7 +233,7 @@ int main(void)
             shader.SetUniform1i("u_sexp", sexp);
             shader.SetUniform1f("u_mshi", mshi);
             shader.SetUniform1f("u_ks", ks);
-            shader.SetUniform1i("u_ilum", ilum);
+            //shader.SetUniform1i("u_ilum", ilum);
             shader.SetUniform1i("u_hasBumpTexture", useBumpTexture);
 
             renderer.Draw(va, ib, shader);
@@ -251,8 +251,8 @@ int main(void)
                 ImGui::End();
 
                 ImGui::Begin("Visuals Properties");
-                ImGui::SliderFloat("Ambient Light Intensity", &ambientStrength, 0.0f, 1.0f);
-                ImGui::ColorEdit3("Ambient Light Color", glm::value_ptr(ambientLightColor)); // Edit 3 floats representing a color
+                ImGui::SliderFloat("Ambient Light Intensity", &globalLightStrength, 0.0f, 1.0f);
+                ImGui::ColorEdit3("Ambient Light Color", glm::value_ptr(globalLightColor)); // Edit 3 floats representing a color
                 
                 ImGui::Text("\nLight Source:");
                 ImGui::InputFloat("kc", &kc, 0.2, 0.5);
@@ -261,13 +261,13 @@ int main(void)
                 ImGui::SliderInt("sexp", &sexp, 0, 128);
                 
                 ImGui::Text("\nMaterial:");
-                ImGui::SliderFloat("mshi", &mshi, 0, 600);
+                ImGui::InputFloat("mshi", &mshi, 0.5, 10);
                 ImGui::SliderFloat("ks", &ks, 0, 10);
                 ImGui::SliderFloat("kd", &kd, 0, 10);
                 ImGui::SliderFloat("ka", &ka, 0, 10);
                 
                 ImGui::Text("\nOther:");
-                ImGui::SliderFloat("rotationSpeed", &increment, 0, 40);
+                ImGui::SliderFloat("rotationSpeed", &increment, 0, 10);
 
 
                 ImGui::End();

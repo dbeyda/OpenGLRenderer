@@ -164,6 +164,7 @@
     <None Include="res\shaders\BasicTexture.shader" />
     <None Include="res\shaders\Phong.shader" />
     <None Include="res\shaders\PhongBumpMap.shader" />
+    <None Include="res\shaders\PhongBumpMapSphere.shader" />
     <None Include="src\vendor\glm\detail\func_common.inl" />
     <None Include="src\vendor\glm\detail\func_common_simd.inl" />
     <None Include="src\vendor\glm\detail\func_exponential.inl" />
