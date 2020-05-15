@@ -465,7 +465,6 @@
     <None Include="res\shaders\BasicTexture.shader" />
     <None Include="res\shaders\Phong.shader" />
     <None Include="res\shaders\PhongBumpMap.shader" />
-    <None Include="res\shaders\PhongBumpMapSphere.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VertexBuffer.h">
