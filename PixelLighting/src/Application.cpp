@@ -10,6 +10,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
+#include "FrameBuffer.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -29,6 +30,8 @@ unsigned int useBumpTexture = 0;
 // settings
 unsigned int SCR_WIDTH = 1024;
 unsigned int SCR_HEIGHT = 768;
+int SHADOW_WIDTH = 1024;
+int SHADOW_HEIGHT = 1024;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -102,6 +105,7 @@ int main(void)
 		
 		Renderer renderer;
 		
+		// ----------- Models
 		std::string golfballPath = "res/models/golfball/golfball.obj";
 		Model golfball("Golfball", golfballPath, renderer);
 		golfball.m_Model = glm::translate(golfball.m_Model, glm::vec3(0, -7, 0));
@@ -121,10 +125,22 @@ int main(void)
 		stonesBottom.m_Model = glm::scale(stonesBottom.m_Model, glm::vec3(20, 20, 20));
 		stonesBottom.m_Model = glm::rotate(stonesBottom.m_Model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
 
-
 		std::vector<Model*> models({ &golfball, &stones, &stonesLeft, &stonesBottom});
-		Shader shader("res/shaders/PhongBumpMap.shader");
+		
+		// ----------- Shaders
+		Shader shader("res/shaders/PhongShadow.shader");
 		shader.Bind();
+
+		Shader zShader("res/shaders/ShadowMapGen.shader");
+
+		FrameBuffer shadowMapFbo = FrameBuffer(GL_FRAMEBUFFER);
+		Texture shadowMapTex = Texture();
+		shadowMapTex.LoadEmpty(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
+		shadowMapFbo.AttachTexture(GL_DEPTH_ATTACHMENT, shadowMapTex);
+		if (!shadowMapFbo.Check())
+		{
+			exit(1);
+		}
 
 		float rotation = 0.0f;
 		float increment = 0.3f;
@@ -147,22 +163,49 @@ int main(void)
 			// -----
 			processInput(window);
 
-			glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
-			glm::mat4 view = camera.GetViewMatrix();
+			glm::vec3 spotLightDir = glm::normalize(glm::vec3(-1.5, -1, -1.5));
+			glm::vec3 spotLightPos = glm::vec3(10, 0.5, 10);
+			glm::mat4 spotLightModel = glm::translate(glm::mat4(1.0f), spotLightPos);
+			
+			// ------- 1st Pass: shadow map
+			glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 20.0f);
+			glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, cameraUp);
+			glm::mat4 lightVp = lightProjection * lightView;
+			/*
+			GLCall(glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT));
+			//shadowMapFbo.Bind();
+			//renderer.Clear(GL_DEPTH_BUFFER_BIT);
+			renderer.Clear();
+			zShader.Bind();
+			for (Model* m : models)
+			{
+				// Draw each model
+				glm::mat4 lightMvp = lightVp * m->m_Model;
+				zShader.SetUniformMat4f("u_MVP", lightMvp);
+				m->Draw(zShader);
+			}
+			//shadowMapFbo.Unbind();
+			*/
+
+			// --------- 2nd Pass: lighting
+			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+			renderer.Clear();
+			shader.Bind();
+			
+			glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
+			glm::mat4 cameraView = camera.GetViewMatrix();
 
 			// Light
-			glm::vec3 spotLightDir = glm::vec3(0, 0, 0);
-			glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), glm::vec3(10, 0.5, 10));
-			glm::mat4 lightMv = view * lightModel;
-			glm::mat4 invTransMvLight = glm::inverseTranspose(lightMv);
+			glm::mat4 mvLight = cameraView * spotLightModel;
+			glm::mat4 invTransMvLight = glm::inverseTranspose(mvLight);
 
-			glm::vec3 mvLightPos = lightMv * glm::vec4(0, 0, 0, 1);
-			glm::vec3 mvSpotLightDir = invTransMvLight * glm::vec4(-1.5, -1, -1.5, 1);
-
-			/* Render here */
-			renderer.Clear();
+			glm::vec3 mvLightPos = mvLight * glm::vec4(0, 0, 0, 1);
+			glm::vec3 mvSpotLightDir = invTransMvLight * glm::vec4(spotLightDir, 1.0f);
 
 			shader.Bind();
+			shadowMapTex.Bind(3);
+			shader.SetUniform1i("DepthMap", 3);
+			shader.SetUniformMat4f("u_DepthMvp", lightVp);
 			shader.SetUniform4f("u_globalLightColor", globalLightColor.r, globalLightColor.g, globalLightColor.b, 1.0f);
 			shader.SetUniform1f("u_globalLightStrength", globalLightStrength);
 			shader.SetUniform3f("u_mvLightPos", mvLightPos.x, mvLightPos.y, mvLightPos.z);
@@ -180,10 +223,9 @@ int main(void)
 					model = glm::rotate(m->m_Model, glm::radians(rotation), glm::vec3(1, 0, 0));
 				else
 					model = m->m_Model;
-				glm::mat4 mvp = projection * view * model;
-				glm::mat4 mv = view * model;
-				glm::mat4 invTransMv = glm::inverseTranspose(view * model);
-
+				glm::mat4 mvp = cameraProjection * cameraView * model;
+				glm::mat4 mv = cameraView * model;
+				glm::mat4 invTransMv = glm::inverseTranspose(cameraView * model);
 				shader.SetUniformMat4f("u_MVP", mvp);
 				shader.SetUniformMat4f("u_MV", mv);
 				shader.SetUniformMat4f("u_invTransMV", invTransMv);
@@ -192,7 +234,7 @@ int main(void)
 				shader.SetUniform1i("u_hasBumpTexture", useBumpTexture);
 				m->Draw(shader);
 			}
-
+			
 			rotation += increment;
 
 			ImGui_ImplGlfwGL3_NewFrame();

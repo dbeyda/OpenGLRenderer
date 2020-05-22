@@ -11,13 +11,18 @@ private:
 	int m_Width, m_Height, m_BPP;
 	unsigned int m_Slot;
 public:
+	unsigned int m_Target;
 	Texture();
 	~Texture();
 
-	void Load(const std::string& path, unsigned int slot = 0);
+	void LoadFromFile(const std::string& path, unsigned int slot = 0);
+	void LoadEmpty(unsigned int TARGET, int internalFormat, int width, int height,
+				   unsigned int format, unsigned int type);
 	void Bind() const;
+	void Bind(unsigned int slot) const;
 	void Unbind();
 
 	inline int getWidth() const { return m_Width;  }
 	inline int GetHight() const { return m_Height;  }
+	inline int GetRendererID() const { return m_RendererID; }
 };

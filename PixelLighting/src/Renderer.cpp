@@ -12,8 +12,11 @@ bool GLLogCall(const char* function, const char* file, int line)
 {
     while (GLenum error = glGetError())
     {
-        std::cout << "[OpenGL Error] (" << error << "): " << function <<
-            " " << file << ":" << line << std::endl;
+        std::cout << std::endl;
+        std::cout << "[OpenGL Error] (" << error << "): "
+                  << glewGetErrorString(error) << std::endl;
+        std::cout << "> Func: " << function <<
+            std::endl << "> File: " << file << ":" << line << '\n' << std::endl;
         return false;
     }
     return true;
@@ -38,4 +41,9 @@ void Renderer::Clear() const
     {
         GLCall(glClear(GL_COLOR_BUFFER_BIT));
     }
+}
+
+void Renderer::Clear(unsigned int bufferEnum)
+{
+    GLCall(glClear(bufferEnum));
 }

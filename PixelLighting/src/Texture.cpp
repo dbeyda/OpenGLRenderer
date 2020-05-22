@@ -7,7 +7,8 @@ std::string getFileExtension(std::string& filepath);
 
 Texture::Texture()
 	: m_RendererID(0), m_LocalBuffer(nullptr),
-	m_Width(0), m_Height(0), m_BPP(0), m_Slot(0)
+	m_Width(0), m_Height(0), m_BPP(0), m_Slot(0),
+	m_Target(0)
 {}
 
 Texture::~Texture() 
@@ -15,10 +16,11 @@ Texture::~Texture()
 	GLCall(glDeleteTextures(1, &m_RendererID));
 }
 
-void Texture::Load(const std::string& path, unsigned int slot)
+void Texture::LoadFromFile(const std::string& path, unsigned int slot)
 {
 	m_FilePath = path;
 	m_Slot = slot;
+	m_Target = GL_TEXTURE_2D;
 
 	unsigned int format;
 	int n_channels;
@@ -59,14 +61,33 @@ void Texture::Load(const std::string& path, unsigned int slot)
 		stbi_image_free(m_LocalBuffer);
 }
 
+void Texture::LoadEmpty(unsigned int target, int internalFormat, int width, int height,
+						unsigned int format, unsigned int type)
+{
+	m_Target = target;
+	GLCall(glGenTextures(1, &m_RendererID));
+	Bind();
+	GLCall(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	GLCall(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	GLCall(glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, NULL));
+	Unbind();
+}
+
 void Texture::Bind() const
 {
 	GLCall(glActiveTexture(GL_TEXTURE0 + m_Slot));
-	GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID));
+	GLCall(glBindTexture(m_Target, m_RendererID));
 }
+
+void Texture::Bind(unsigned int slot) const
+{
+	GLCall(glActiveTexture(GL_TEXTURE0 + slot));
+	GLCall(glBindTexture(m_Target, m_RendererID));
+}
+
 void Texture::Unbind()
 {
-	GLCall(glBindTexture(GL_TEXTURE_2D, 0));
+	GLCall(glBindTexture(m_Target, 0));
 }
 
 std::string getFileExtension(std::string& filepath)

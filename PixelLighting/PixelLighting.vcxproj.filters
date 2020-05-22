@@ -60,6 +60,9 @@
     <ClCompile Include="src\Model.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
+    <ClCompile Include="src\FrameBuffer.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\Basic.shader" />
@@ -468,6 +471,8 @@
     <None Include="res\shaders\BasicTexture.shader" />
     <None Include="res\shaders\Phong.shader" />
     <None Include="res\shaders\PhongBumpMap.shader" />
+    <None Include="res\shaders\ShadowMapGen.shader" />
+    <None Include="res\shaders\PhongShadow.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VertexBuffer.h">
@@ -1257,6 +1262,9 @@
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
     <ClInclude Include="src\Model.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FrameBuffer.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
   </ItemGroup>
