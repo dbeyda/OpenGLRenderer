@@ -74,18 +74,18 @@ Model::~Model()
 void Model::Bind(Shader& shader)
 {
 	shader.Bind();
-	shader.SetUniform1f("u_mshi", m_Mshi);
-	shader.SetUniform1f("u_ks", m_Ks);
-	shader.SetUniform1f("u_ka", m_Ka);
-	shader.SetUniform1f("u_kd", m_Kd);
+	shader.SetUniform1f("material.mshi", m_Mshi);
+	shader.SetUniform1f("material.ks", m_Ks);
+	shader.SetUniform1f("material.ka", m_Ka);
+	shader.SetUniform1f("material.kd", m_Kd);
 
-	shader.SetUniform1i("u_hasAmbientTexture", m_HasAmbientTexture);
-	shader.SetUniform1i("u_hasDiffuseTexture", m_HasDiffuseTexture);
-	shader.SetUniform1i("u_hasBumpTexture", m_HasBumpTexture);
+	shader.SetUniform1i("material.hasAmbientTexture", m_HasAmbientTexture);
+	shader.SetUniform1i("material.hasDiffuseTexture", m_HasDiffuseTexture);
+	shader.SetUniform1i("material.hasBumpTexture", m_HasBumpTexture);
 
-	shader.SetUniform1i("AmbientTexture", (signed int) m_AmbientSlot);
-	shader.SetUniform1i("DiffuseTexture", (signed int) m_DiffuseSlot);
-	shader.SetUniform1i("BumpTexture", (signed int) m_BumpSlot);
+	shader.SetUniform1i("samplers.AmbientTexture", (signed int) m_AmbientSlot);
+	shader.SetUniform1i("samplers.DiffuseTexture", (signed int) m_DiffuseSlot);
+	shader.SetUniform1i("samplers.BumpTexture", (signed int) m_BumpSlot);
 
 	if (m_HasAmbientTexture)	m_AmbientTexture->Bind();
 	if (m_HasDiffuseTexture)	m_DiffuseTexture->Bind();

@@ -194,13 +194,13 @@ int main(void)
 			
 			glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
 			glm::mat4 cameraView = camera.GetViewMatrix();
+			glm::mat4 invTransCameraView = glm::inverseTranspose(cameraView);
+
 
 			// Light
-			glm::mat4 mvLight = cameraView * spotLightModel;
-			glm::mat4 invTransMvLight = glm::inverseTranspose(mvLight);
-
-			glm::vec3 mvLightPos = mvLight * glm::vec4(0, 0, 0, 1);
-			glm::vec3 mvSpotLightDir = invTransMvLight * glm::vec4(spotLightDir, 1.0f);
+			glm::vec3 cameraLightPos = cameraView * glm::vec4(spotLightPos, 1.0f);
+			glm::vec3 cameraSpotLightDir = invTransCameraView * glm::vec4(spotLightDir, 1.0f);
+			cameraSpotLightDir = glm::normalize(cameraSpotLightDir);
 
 			shader.Bind();
 			shadowMapTex.Bind(3);
@@ -208,12 +208,12 @@ int main(void)
 			shader.SetUniformMat4f("u_DepthMvp", lightVp);
 			shader.SetUniform4f("u_globalLightColor", globalLightColor.r, globalLightColor.g, globalLightColor.b, 1.0f);
 			shader.SetUniform1f("u_globalLightStrength", globalLightStrength);
-			shader.SetUniform3f("u_mvLightPos", mvLightPos.x, mvLightPos.y, mvLightPos.z);
-			shader.SetUniform3f("u_mvSpotLightDir", mvSpotLightDir.x, mvSpotLightDir.y, mvSpotLightDir.z);
-			shader.SetUniform1f("u_kc", kc);
-			shader.SetUniform1f("u_kl", kl);
-			shader.SetUniform1f("u_kq", kq);
-			shader.SetUniform1i("u_sexp", sexp);
+			shader.SetUniform3f("light.cameraSpacePos", cameraLightPos.x, cameraLightPos.y, cameraLightPos.z);
+			shader.SetUniform3f("light.cameraSpaceDir", cameraSpotLightDir.x, cameraSpotLightDir.y, cameraSpotLightDir.z);
+			shader.SetUniform1f("light.kc", kc);
+			shader.SetUniform1f("light.kl", kl);
+			shader.SetUniform1f("light.kq", kq);
+			shader.SetUniform1i("light.sexp", sexp);
 
 			for (Model *m : models)
 			{
@@ -231,7 +231,7 @@ int main(void)
 				shader.SetUniformMat4f("u_invTransMV", invTransMv);
 
 				m->Bind(shader);
-				shader.SetUniform1i("u_hasBumpTexture", useBumpTexture);
+				shader.SetUniform1i("material.hasBumpTexture", useBumpTexture);
 				m->Draw(shader);
 			}
 			
