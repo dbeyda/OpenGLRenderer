@@ -12,7 +12,7 @@ public:
 	~FrameBuffer();
 
 	void AttachTexture(unsigned int attachment, Texture& texture);
-	void Bind() const;
+	void Bind();
 	void Unbind();
 	bool Check();
 };

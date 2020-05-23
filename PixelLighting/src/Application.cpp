@@ -32,6 +32,8 @@ unsigned int SCR_WIDTH = 1024;
 unsigned int SCR_HEIGHT = 768;
 int SHADOW_WIDTH = 1024;
 int SHADOW_HEIGHT = 1024;
+float SHADOW_NEAR = 0.1f;
+float SHADOW_FAR = 5000.0f;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -135,12 +137,7 @@ int main(void)
 
 		FrameBuffer shadowMapFbo = FrameBuffer(GL_FRAMEBUFFER);
 		Texture shadowMapTex = Texture();
-		shadowMapTex.LoadEmpty(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
-		shadowMapFbo.AttachTexture(GL_DEPTH_ATTACHMENT, shadowMapTex);
-		if (!shadowMapFbo.Check())
-		{
-			exit(1);
-		}
+		shadowMapTex.LoadEmpty(GL_TEXTURE_2D, GL_DEPTH_COMPONENT32, SHADOW_WIDTH, SHADOW_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
 
 		float rotation = 0.0f;
 		float increment = 0.3f;
@@ -168,15 +165,23 @@ int main(void)
 			glm::mat4 spotLightModel = glm::translate(glm::mat4(1.0f), spotLightPos);
 			
 			// ------- 1st Pass: shadow map
-			glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 20.0f);
+			glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, SHADOW_NEAR, SHADOW_FAR);
 			glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, cameraUp);
+			//glm::mat4 lightView = camera.GetViewMatrix();
 			glm::mat4 lightVp = lightProjection * lightView;
-			/*
+			
 			GLCall(glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT));
-			//shadowMapFbo.Bind();
-			//renderer.Clear(GL_DEPTH_BUFFER_BIT);
-			renderer.Clear();
+			shadowMapFbo.Bind();
+			shadowMapFbo.AttachTexture(GL_DEPTH_ATTACHMENT, shadowMapTex);
+			if (!shadowMapFbo.Check())
+			{
+				std::cout << "DepthBuffer Texture not OK. Exiting..." << std::endl << std::endl;
+				exit(1);
+			}
+			renderer.Clear(GL_DEPTH_BUFFER_BIT);
 			zShader.Bind();
+			zShader.SetUniform1f("u_far", SHADOW_FAR);
+			zShader.SetUniform1f("u_near", SHADOW_NEAR);
 			for (Model* m : models)
 			{
 				// Draw each model
@@ -184,11 +189,11 @@ int main(void)
 				zShader.SetUniformMat4f("u_MVP", lightMvp);
 				m->Draw(zShader);
 			}
-			//shadowMapFbo.Unbind();
-			*/
-
+			shadowMapFbo.Unbind();
+			
+			
 			// --------- 2nd Pass: lighting
-			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+			glViewport(0, 0, (int) SCR_WIDTH, (int) SCR_HEIGHT);
 			renderer.Clear();
 			shader.Bind();
 			
@@ -196,16 +201,22 @@ int main(void)
 			glm::mat4 cameraView = camera.GetViewMatrix();
 			glm::mat4 invTransCameraView = glm::inverseTranspose(cameraView);
 
-
 			// Light
 			glm::vec3 cameraLightPos = cameraView * glm::vec4(spotLightPos, 1.0f);
 			glm::vec3 cameraSpotLightDir = invTransCameraView * glm::vec4(spotLightDir, 1.0f);
 			cameraSpotLightDir = glm::normalize(cameraSpotLightDir);
 
-			shader.Bind();
+			// Shadow
+			glm::mat4 biasMatrix(
+				0.5, 0.0, 0.0, 0.0,
+				0.0, 0.5, 0.0, 0.0,
+				0.0, 0.0, 0.5, 0.0,
+				0.5, 0.5, 0.5, 1.0
+			);
+			glm::mat4 depthBiasMVP = biasMatrix * lightVp;
+
 			shadowMapTex.Bind(3);
-			shader.SetUniform1i("DepthMap", 3);
-			shader.SetUniformMat4f("u_DepthMvp", lightVp);
+			shader.SetUniform1i("samplers.DepthMap", 3);
 			shader.SetUniform4f("u_globalLightColor", globalLightColor.r, globalLightColor.g, globalLightColor.b, 1.0f);
 			shader.SetUniform1f("u_globalLightStrength", globalLightStrength);
 			shader.SetUniform3f("light.cameraSpacePos", cameraLightPos.x, cameraLightPos.y, cameraLightPos.z);
@@ -232,6 +243,8 @@ int main(void)
 
 				m->Bind(shader);
 				shader.SetUniform1i("material.hasBumpTexture", useBumpTexture);
+				shader.SetUniformMat4f("u_DepthMvp", depthBiasMVP * m->m_Model);
+				shader.SetUniformMat4f("u_lightVp", lightVp * m->m_Model);
 				m->Draw(shader);
 			}
 			
