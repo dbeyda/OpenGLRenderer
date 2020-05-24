@@ -17,7 +17,7 @@ public:
 
 	void LoadFromFile(const std::string& path, unsigned int slot = 0);
 	void LoadEmpty(unsigned int TARGET, int internalFormat, int width, int height,
-				   unsigned int format, unsigned int type);
+				   unsigned int format, unsigned int type, unsigned int slot = 0);
 	void Bind() const;
 	void Bind(unsigned int slot) const;
 	void Unbind();

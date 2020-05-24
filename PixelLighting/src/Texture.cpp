@@ -62,13 +62,15 @@ void Texture::LoadFromFile(const std::string& path, unsigned int slot)
 }
 
 void Texture::LoadEmpty(unsigned int target, int internalFormat, int width, int height,
-						unsigned int format, unsigned int type)
+						unsigned int format, unsigned int type, unsigned int slot)
 {
 	m_Target = target;
 	GLCall(glGenTextures(1, &m_RendererID));
-	Bind();
-	GLCall(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	GLCall(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	Bind(slot);
+	GLCall(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+	GLCall(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	GLCall(glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	GLCall(glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 	GLCall(glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, NULL));
 	Unbind();
 }

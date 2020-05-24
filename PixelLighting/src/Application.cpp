@@ -135,9 +135,18 @@ int main(void)
 
 		Shader zShader("res/shaders/ShadowMapGen.shader");
 
-		FrameBuffer shadowMapFbo = FrameBuffer(GL_FRAMEBUFFER);
 		Texture shadowMapTex = Texture();
-		shadowMapTex.LoadEmpty(GL_TEXTURE_2D, GL_DEPTH_COMPONENT32, SHADOW_WIDTH, SHADOW_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT);
+		shadowMapTex.LoadEmpty(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT, 3);
+		
+		FrameBuffer shadowMapFbo = FrameBuffer(GL_FRAMEBUFFER);
+		shadowMapFbo.Bind();
+		shadowMapFbo.AttachTexture(GL_DEPTH_ATTACHMENT, shadowMapTex);
+		if (!shadowMapFbo.Check())
+		{
+			std::cout << "DepthBuffer Texture not OK. Exiting..." << std::endl << std::endl;
+			exit(1);
+		}
+		shadowMapFbo.Unbind();
 
 		float rotation = 0.0f;
 		float increment = 0.3f;
@@ -152,6 +161,8 @@ int main(void)
 		{
 			// per-frame time logic
 			// --------------------
+			glm::mat4 golfballRotatedModel = glm::rotate(golfball.m_Model, glm::radians(rotation), glm::vec3(1, 0, 0));
+
 			float currentFrame = glfwGetTime();
 			deltaTime = currentFrame - lastFrame;
 			lastFrame = currentFrame;
@@ -167,17 +178,12 @@ int main(void)
 			// ------- 1st Pass: shadow map
 			glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, SHADOW_NEAR, SHADOW_FAR);
 			glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, cameraUp);
-			//glm::mat4 lightView = camera.GetViewMatrix();
 			glm::mat4 lightVp = lightProjection * lightView;
 			
-			GLCall(glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT));
 			shadowMapFbo.Bind();
-			shadowMapFbo.AttachTexture(GL_DEPTH_ATTACHMENT, shadowMapTex);
-			if (!shadowMapFbo.Check())
-			{
-				std::cout << "DepthBuffer Texture not OK. Exiting..." << std::endl << std::endl;
-				exit(1);
-			}
+			GLCall(glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT));
+			GLCall(glDrawBuffer(GL_NONE));
+			
 			renderer.Clear(GL_DEPTH_BUFFER_BIT);
 			zShader.Bind();
 			zShader.SetUniform1f("u_far", SHADOW_FAR);
@@ -185,7 +191,12 @@ int main(void)
 			for (Model* m : models)
 			{
 				// Draw each model
-				glm::mat4 lightMvp = lightVp * m->m_Model;
+				glm::mat4 model;
+				if (m->GetLabel() == "Golfball")
+					model = golfballRotatedModel;
+				else
+					model = m->m_Model;
+				glm::mat4 lightMvp = lightVp * model;
 				zShader.SetUniformMat4f("u_MVP", lightMvp);
 				m->Draw(zShader);
 			}
@@ -194,6 +205,7 @@ int main(void)
 			
 			// --------- 2nd Pass: lighting
 			glViewport(0, 0, (int) SCR_WIDTH, (int) SCR_HEIGHT);
+			GLCall(glDrawBuffer(GL_BACK));
 			renderer.Clear();
 			shader.Bind();
 			
@@ -231,7 +243,7 @@ int main(void)
 				// Draw each model
 				glm::mat4 model;
 				if (m->GetLabel() == "Golfball")
-					model = glm::rotate(m->m_Model, glm::radians(rotation), glm::vec3(1, 0, 0));
+					model = golfballRotatedModel;
 				else
 					model = m->m_Model;
 				glm::mat4 mvp = cameraProjection * cameraView * model;
@@ -243,8 +255,8 @@ int main(void)
 
 				m->Bind(shader);
 				shader.SetUniform1i("material.hasBumpTexture", useBumpTexture);
-				shader.SetUniformMat4f("u_DepthMvp", depthBiasMVP * m->m_Model);
-				shader.SetUniformMat4f("u_lightVp", lightVp * m->m_Model);
+				shader.SetUniformMat4f("u_DepthMvp", depthBiasMVP * model);
+				shader.SetUniformMat4f("u_lightVp", lightVp * model);
 				m->Draw(shader);
 			}
 			
