@@ -137,7 +137,11 @@ int main(void)
 
 		Texture shadowMapTex = Texture();
 		shadowMapTex.LoadEmpty(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT, 3);
-		
+		shadowMapTex.Bind(3);
+		GLCall(glTexParameteri(shadowMapTex.m_Target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE));
+		GLCall(glTexParameteri(shadowMapTex.m_Target, GL_TEXTURE_COMPARE_FUNC, GL_LESS));
+		shadowMapTex.Unbind();
+
 		FrameBuffer shadowMapFbo = FrameBuffer(GL_FRAMEBUFFER);
 		shadowMapFbo.Bind();
 		shadowMapFbo.AttachTexture(GL_DEPTH_ATTACHMENT, shadowMapTex);

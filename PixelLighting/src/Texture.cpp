@@ -67,8 +67,8 @@ void Texture::LoadEmpty(unsigned int target, int internalFormat, int width, int 
 	m_Target = target;
 	GLCall(glGenTextures(1, &m_RendererID));
 	Bind(slot);
-	GLCall(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-	GLCall(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	GLCall(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+	GLCall(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	GLCall(glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
 	GLCall(glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 	GLCall(glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, NULL));
