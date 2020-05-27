@@ -26,24 +26,24 @@ Model::Model(const std::string& label, const std::string& path, Renderer& render
 	// textures
 	if (obj.materials.size() && obj.materials[0].ambient_texname.size())
 	{
-		m_AmbientTexture = new Texture();
-		m_AmbientTexture->LoadFromFile(obj.materials[0].ambient_texname, m_AmbientSlot);
+		m_AmbientTexture = new Texture(m_AmbientSlot);
+		m_AmbientTexture->LoadFromFile(obj.materials[0].ambient_texname);
 		m_HasAmbientTexture = 1;
 		// m_AmbientTexture->Bind();
 	}
 
 	if (obj.materials.size() && obj.materials[0].diffuse_texname.size())
 	{
-		m_DiffuseTexture = new Texture();
-		m_DiffuseTexture->LoadFromFile(obj.materials[0].diffuse_texname, m_DiffuseSlot);
+		m_DiffuseTexture = new Texture(m_DiffuseSlot);
+		m_DiffuseTexture->LoadFromFile(obj.materials[0].diffuse_texname);
 		m_HasDiffuseTexture = 1;
 		// m_DiffuseTexture->Bind(); // really necessary?
 	}
 
 	if (obj.materials.size() && obj.materials[0].bump_texname.size());
 	{
-		m_BumpTexture = new Texture();
-		m_BumpTexture->LoadFromFile(obj.materials[0].bump_texname, m_BumpSlot);
+		m_BumpTexture = new Texture(m_BumpSlot);
+		m_BumpTexture->LoadFromFile(obj.materials[0].bump_texname);
 		m_HasBumpTexture = 1;
 		// m_BumpTexture->Bind();
 	}

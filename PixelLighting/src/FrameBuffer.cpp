@@ -17,7 +17,9 @@ FrameBuffer::~FrameBuffer()
 
 void FrameBuffer::AttachTexture(unsigned int attachment, Texture &texture)
 {
+	Bind();
 	GLCall(glFramebufferTexture2D(m_Target, attachment, texture.m_Target, texture.GetRendererID(), 0));
+	Unbind();
 }
 
 void FrameBuffer::Bind()
@@ -27,11 +29,14 @@ void FrameBuffer::Bind()
 
 bool FrameBuffer::Check()
 {
+	Bind();
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
 		std::cout << "[OpenGL Error]: FrameBuffer not complete." << std::endl;
+		Unbind();
 		return false;
 	}
+	Unbind();
 	return true;
 }
 

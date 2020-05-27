@@ -12,15 +12,16 @@ private:
 	unsigned int m_Slot;
 public:
 	unsigned int m_Target;
-	Texture();
+	Texture(unsigned int slot);
 	~Texture();
 
-	void LoadFromFile(const std::string& path, unsigned int slot = 0);
+	void LoadFromFile(const std::string& path);
 	void LoadEmpty(unsigned int TARGET, int internalFormat, int width, int height,
-				   unsigned int format, unsigned int type, unsigned int slot = 0);
+				   unsigned int format, unsigned int type);
 	void Bind() const;
-	void Bind(unsigned int slot) const;
+	void Bind(unsigned int slot);
 	void Unbind();
+	void SetTexParameteri(unsigned int pName, unsigned int pValue);
 
 	inline int getWidth() const { return m_Width;  }
 	inline int GetHight() const { return m_Height;  }

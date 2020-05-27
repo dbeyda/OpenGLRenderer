@@ -12,7 +12,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
-#include "FrameBuffer.h"
+#include "ShadowMap.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -32,8 +32,8 @@ unsigned int useBumpTexture = 0;
 // settings
 unsigned int SCR_WIDTH = 1024;
 unsigned int SCR_HEIGHT = 768;
-int SHADOW_WIDTH = 1024;
-int SHADOW_HEIGHT = 1024;
+int SHADOW_WIDTH = 768;
+int SHADOW_HEIGHT = 768;
 float SHADOW_NEAR = 0.1f;
 float SHADOW_FAR = 5000.0f;
 
@@ -140,22 +140,9 @@ int main(void)
 
 		Shader zShader("res/shaders/ShadowMapGen.shader");
 
-		Texture shadowMapTex = Texture();
-		shadowMapTex.LoadEmpty(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT, 3);
-		shadowMapTex.Bind(3);
-		GLCall(glTexParameteri(shadowMapTex.m_Target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE));
-		GLCall(glTexParameteri(shadowMapTex.m_Target, GL_TEXTURE_COMPARE_FUNC, GL_LESS));
-		shadowMapTex.Unbind();
-
-		FrameBuffer shadowMapFbo = FrameBuffer(GL_FRAMEBUFFER);
-		shadowMapFbo.Bind();
-		shadowMapFbo.AttachTexture(GL_DEPTH_ATTACHMENT, shadowMapTex);
-		if (!shadowMapFbo.Check())
-		{
-			std::cout << "DepthBuffer Texture not OK. Exiting..." << std::endl << std::endl;
-			exit(1);
-		}
-		shadowMapFbo.Unbind();
+		ShadowMap shadowMap(3);
+		shadowMap.LoadShadowTexture(SHADOW_WIDTH, SHADOW_HEIGHT, GL_FLOAT);
+		shadowMap.GenerateCircularOffsets(SAMPLES_COUNT);
 
 		float rotation = 0.0f;
 		float increment = 0.3f;
@@ -163,33 +150,6 @@ int main(void)
 		ImGui::CreateContext();
 		ImGui_ImplGlfwGL3_Init(window, true);
 		ImGui::StyleColorsDark();
-
-		// generating offset matrix
-		// square offset matrix
-		/*
-		std::vector<std::pair<float, float>> offsets;
-		int limit = std::sqrt(SAMPLES_COUNT);
-		for (int i = -limit / 2; i <= limit / 2; i++)
-			for (int j = -limit / 2; j <= limit / 2; j++)
-			{
-				float jitX = -0.5 + (float)std::rand() / RAND_MAX;
-				float jitY = -0.5 + (float)std::rand() / RAND_MAX;
-				offsets.push_back(std::make_pair(i + jitX, j + jitY));
-			}
-		*/
-		//// circular offset matrix
-		std::vector<std::pair<float, float>> offsets;
-		for (int r = 0; r < SAMPLES_COUNT/4; r++)
-			for (float teta = 0.0; teta < 1.0; teta += 0.25)
-			{
-				float jitR = (float)std::rand() / RAND_MAX;
-				float jitTeta = 0.25 * (float)std::rand() / RAND_MAX;
-				//jitTeta = jitR = 0.0;
-
-				float x = sqrt(r + jitR) * glm::cos(2 * glm::pi<float>() * (teta + jitTeta));
-				float y = sqrt(r + jitR) * glm::sin(2 * glm::pi<float>() * (teta + jitTeta));
-				offsets.push_back(std::make_pair(x, y));
-			}
 
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
@@ -217,10 +177,7 @@ int main(void)
 			glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, cameraUp);
 			glm::mat4 lightVp = lightProjection * lightView;
 			
-			shadowMapFbo.Bind();
-			GLCall(glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT));
-			GLCall(glDrawBuffer(GL_NONE));
-			
+			shadowMap.SetAsRenderTarget(renderer);
 			renderer.Clear(GL_DEPTH_BUFFER_BIT);
 			zShader.Bind();
 			zShader.SetUniform1f("u_far", SHADOW_FAR);
@@ -238,17 +195,16 @@ int main(void)
 				zShader.SetUniformMat4f("u_MVP", lightMvp);
 				m->Draw(zShader);
 			}
-			shadowMapFbo.Unbind();
+			shadowMap.ResetAsRenderTarget();
 			
 			
 			// --------- 2nd Pass: lighting
-			glViewport(0, 0, (int) SCR_WIDTH, (int) SCR_HEIGHT);
-			GLCall(glDrawBuffer(GL_BACK));
+			renderer.SetViewport((int) SCR_WIDTH, (int) SCR_HEIGHT);
+			renderer.SetDrawBuffer(GL_BACK);
 			renderer.Clear();
 			shader.Bind();
 
-			shader.SetUniformVec2f("offsets", offsets);
-
+			shader.SetUniformVec2f("offsets", shadowMap.m_Offsets);
 
 			
 			glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
@@ -269,7 +225,8 @@ int main(void)
 			);
 			glm::mat4 depthBiasMVP = biasMatrix * lightVp;
 
-			shadowMapTex.Bind(3);
+			// shadowMapTex.Bind(3);
+			shadowMap.BindForReading(3);
 			shader.SetUniform1i("samplers.DepthMap", 3);
 			shader.SetUniform4f("u_globalLightColor", globalLightColor.r, globalLightColor.g, globalLightColor.b, 1.0f);
 			shader.SetUniform1f("u_globalLightStrength", globalLightStrength);

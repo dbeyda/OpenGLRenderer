@@ -30,6 +30,17 @@ void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& 
     GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
 }
 
+
+void Renderer::SetViewport(int width, int height)
+{
+	GLCall(glViewport(0, 0, width, height));
+}
+
+void Renderer::SetDrawBuffer(unsigned int drawBuffer)
+{
+    GLCall(glDrawBuffer(drawBuffer));
+}
+
 void Renderer::Clear() const
 {
     GLCall(bool enabled = glIsEnabled(GL_DEPTH_TEST));
