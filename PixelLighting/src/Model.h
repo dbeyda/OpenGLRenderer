@@ -11,8 +11,6 @@ class Model
 {
 private:
 	std::string m_Label;
-	int m_HasAmbientTexture, m_HasDiffuseTexture,
-		m_HasBumpTexture;
 	unsigned int m_AmbientSlot, m_DiffuseSlot, m_BumpSlot;
 	
 	Renderer& m_Renderer;
@@ -23,6 +21,9 @@ private:
 	Texture *m_AmbientTexture, *m_DiffuseTexture, *m_BumpTexture;
 
 public:
+	int m_HasAmbientTexture, m_HasDiffuseTexture,
+		m_HasBumpTexture;
+
 	float m_Mshi, m_Ka, m_Kd, m_Ks;
 	glm::mat4 m_Model;
 

@@ -1,3 +1,5 @@
+#define SAMPLES_COUNT 64
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -110,7 +112,7 @@ int main(void)
 		// ----------- Models
 		std::string golfballPath = "res/models/golfball/golfball.obj";
 		Model golfball("Golfball", golfballPath, renderer);
-		golfball.m_Model = glm::translate(golfball.m_Model, glm::vec3(0, -7, 0));
+		golfball.m_Model = glm::translate(golfball.m_Model, glm::vec3(0, -7.8, 0));
 		
 		std::string stonesPath = "res/models/stones/stones.obj";
 		Model stones("Stones", stonesPath, renderer);
@@ -126,6 +128,9 @@ int main(void)
 		stonesBottom.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(-10, -10, 10));
 		stonesBottom.m_Model = glm::scale(stonesBottom.m_Model, glm::vec3(20, 20, 20));
 		stonesBottom.m_Model = glm::rotate(stonesBottom.m_Model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+		stonesBottom.m_HasAmbientTexture = 0;
+		stonesBottom.m_HasDiffuseTexture = 0;
+		stonesBottom.m_HasBumpTexture = 0;
 
 		std::vector<Model*> models({ &golfball, &stones, &stonesLeft, &stonesBottom});
 		
@@ -159,10 +164,37 @@ int main(void)
 		ImGui_ImplGlfwGL3_Init(window, true);
 		ImGui::StyleColorsDark();
 
+		// generating offset matrix
+		// square offset matrix
+		/*
+		std::vector<std::pair<float, float>> offsets;
+		int limit = std::sqrt(SAMPLES_COUNT);
+		for (int i = -limit / 2; i <= limit / 2; i++)
+			for (int j = -limit / 2; j <= limit / 2; j++)
+			{
+				float jitX = -0.5 + (float)std::rand() / RAND_MAX;
+				float jitY = -0.5 + (float)std::rand() / RAND_MAX;
+				offsets.push_back(std::make_pair(i + jitX, j + jitY));
+			}
+		*/
+		//// circular offset matrix
+		std::vector<std::pair<float, float>> offsets;
+		for (int r = 0; r < SAMPLES_COUNT/4; r++)
+			for (float teta = 0.0; teta < 1.0; teta += 0.25)
+			{
+				float jitR = (float)std::rand() / RAND_MAX;
+				float jitTeta = 0.25 * (float)std::rand() / RAND_MAX;
+				//jitTeta = jitR = 0.0;
+
+				float x = sqrt(r + jitR) * glm::cos(2 * glm::pi<float>() * (teta + jitTeta));
+				float y = sqrt(r + jitR) * glm::sin(2 * glm::pi<float>() * (teta + jitTeta));
+				offsets.push_back(std::make_pair(x, y));
+			}
 
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
 		{
+
 			// per-frame time logic
 			// --------------------
 			glm::mat4 golfballRotatedModel = glm::rotate(golfball.m_Model, glm::radians(rotation), glm::vec3(1, 0, 0));
@@ -180,6 +212,7 @@ int main(void)
 			glm::mat4 spotLightModel = glm::translate(glm::mat4(1.0f), spotLightPos);
 			
 			// ------- 1st Pass: shadow map
+			
 			glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, SHADOW_NEAR, SHADOW_FAR);
 			glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, cameraUp);
 			glm::mat4 lightVp = lightProjection * lightView;
@@ -192,6 +225,7 @@ int main(void)
 			zShader.Bind();
 			zShader.SetUniform1f("u_far", SHADOW_FAR);
 			zShader.SetUniform1f("u_near", SHADOW_NEAR);
+
 			for (Model* m : models)
 			{
 				// Draw each model
@@ -212,6 +246,10 @@ int main(void)
 			GLCall(glDrawBuffer(GL_BACK));
 			renderer.Clear();
 			shader.Bind();
+
+			shader.SetUniformVec2f("offsets", offsets);
+
+
 			
 			glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
 			glm::mat4 cameraView = camera.GetViewMatrix();
@@ -261,6 +299,9 @@ int main(void)
 				shader.SetUniform1i("material.hasBumpTexture", useBumpTexture);
 				shader.SetUniformMat4f("u_DepthMvp", depthBiasMVP * model);
 				shader.SetUniformMat4f("u_lightVp", lightVp * model);
+
+				// TODO: remove this
+				shader.SetUniform1i("material.hasBumpTexture", 0);
 				m->Draw(shader);
 			}
 			
