@@ -31,5 +31,6 @@ public:
 	~Model();
 	void Bind(Shader& shader);
 	void Draw(Shader& shader);
+	void Unbind();
 	std::string GetLabel();
 };

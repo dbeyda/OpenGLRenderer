@@ -7,9 +7,11 @@ std::string getFileExtension(std::string& filepath);
 
 Texture::Texture(unsigned int slot)
 	: m_RendererID(0), m_LocalBuffer(nullptr),
-	m_Width(0), m_Height(0), m_BPP(0), m_Slot(slot),
-	m_Target(0)
-{}
+	m_Width(0), m_Height(0), m_BPP(0), m_Depth(0),
+	m_Slot(slot), m_Target(0)
+{
+	GLCall(glGenTextures(1, &m_RendererID));
+}
 
 Texture::~Texture() 
 {
@@ -44,7 +46,6 @@ void Texture::LoadFromFile(const std::string& path)
 	stbi_set_flip_vertically_on_load(1);
 	m_LocalBuffer = stbi_load(m_FilePath.c_str(), &m_Width, &m_Height, &m_BPP, n_channels);
 
-	GLCall(glGenTextures(1, &m_RendererID));
 	Bind();
 
 	GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
@@ -60,13 +61,28 @@ void Texture::LoadFromFile(const std::string& path)
 		stbi_image_free(m_LocalBuffer);
 }
 
-void Texture::LoadEmpty(unsigned int target, int internalFormat, int width, int height,
-						unsigned int format, unsigned int type)
+void Texture::TexImage2D(unsigned int target, int internalFormat, int width, int height,
+						unsigned int format, unsigned int type, void *data)
 {
 	m_Target = target;
-	GLCall(glGenTextures(1, &m_RendererID));
+	m_Width = width;
+	m_Height = height;
 	Bind(m_Slot);
-	GLCall(glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, NULL));
+	GLCall(glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, data));
+	Unbind();
+}
+
+void Texture::TexImage3D(unsigned int target, int internalFormat, int width, int height,
+	int depth, unsigned int format, unsigned int type, void *data)
+{
+	m_Target = target;
+	m_Width = width;
+	m_Height = height;
+	m_Depth = depth;
+	Bind(m_Slot);
+	//GLCall(glTexImage3D(target, 0, internalFormat, width, height, depth, 0, format, type, data));
+	GLCall(glTexStorage3D(target, 1, internalFormat, width, height, depth));
+	GLCall(glTexSubImage3D(target, 0, 0, 0, 0, width, height, depth, format, type, data));
 	Unbind();
 }
 

@@ -8,7 +8,7 @@ private:
 	unsigned int m_RendererID;
 	std::string m_FilePath;
 	unsigned char* m_LocalBuffer;
-	int m_Width, m_Height, m_BPP;
+	int m_Width, m_Height, m_BPP, m_Depth;
 	unsigned int m_Slot;
 public:
 	unsigned int m_Target;
@@ -16,8 +16,10 @@ public:
 	~Texture();
 
 	void LoadFromFile(const std::string& path);
-	void LoadEmpty(unsigned int TARGET, int internalFormat, int width, int height,
-				   unsigned int format, unsigned int type);
+	void TexImage2D(unsigned int TARGET, int internalFormat, int width, int height,
+				   unsigned int format, unsigned int type, void *data=nullptr);
+	void TexImage3D(unsigned int TARGET, int internalFormat, int width, int height,
+		int depth, unsigned int format, unsigned int type, void *data=nullptr);
 	void Bind() const;
 	void Bind(unsigned int slot);
 	void Unbind();

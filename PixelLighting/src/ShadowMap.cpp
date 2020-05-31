@@ -1,8 +1,10 @@
 #include "ShadowMap.h"
 
 ShadowMap::ShadowMap(unsigned int slot)
-	:m_Width(0), m_Height(0), m_Slot(slot),
-	m_Texture(nullptr), m_Fbo(nullptr), m_Type(0)
+	:m_Width(0), m_Height(0), m_ShadowMapSlot(slot),
+	m_Texture(nullptr), m_Fbo(nullptr), m_Type(0),
+	m_JitTexture(nullptr), m_JitTextureSlot(0),
+	m_Blur(0.2)
 {
 	m_Fbo = new FrameBuffer(GL_FRAMEBUFFER);
 }
@@ -10,6 +12,7 @@ ShadowMap::ShadowMap(unsigned int slot)
 ShadowMap::~ShadowMap()
 {
 	if (m_Texture) delete m_Texture;
+	if (m_JitTexture) delete m_JitTexture;
 	if (m_Fbo) delete m_Fbo;
 }
 
@@ -18,8 +21,8 @@ void ShadowMap::LoadShadowTexture(int width, int height, unsigned int type)
 	m_Width = width;
 	m_Height = height;
 	m_Type = type;
-	m_Texture = new Texture(m_Slot);
-	m_Texture->LoadEmpty(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, m_Width, m_Height, GL_DEPTH_COMPONENT, m_Type);
+	m_Texture = new Texture(m_ShadowMapSlot);
+	m_Texture->TexImage2D(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, m_Width, m_Height, GL_DEPTH_COMPONENT, m_Type);
 	
 	m_Texture->SetTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	m_Texture->SetTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -37,60 +40,72 @@ void ShadowMap::LoadShadowTexture(int width, int height, unsigned int type)
 	}
 }
 
-void ShadowMap::GenerateCircularOffsets(int nSamples, bool jittered /*= true*/)
+void ShadowMap::LoadJitTexture(int samplesPixel, int width, int height, unsigned int slot, void *data)
 {
-	m_Offsets.clear();
-	float jitR = 0.0, jitTeta = 0.0;
+	m_JitTextureSlot = slot;
+	m_JitTexture = new Texture(m_JitTextureSlot);
 
-	for (int r = 0; r < nSamples / 4; r++)
-		for (float teta = 0.0; teta < 1.0; teta += 0.25)
+	m_JitTexture->TexImage3D(GL_TEXTURE_3D, GL_RG8, width, height, samplesPixel, GL_RG, GL_UNSIGNED_BYTE, data);
+	m_JitTexture->SetTexParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	m_JitTexture->SetTexParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	m_JitTexture->SetTexParameteri(GL_TEXTURE_WRAP_S, GL_REPEAT);
+	m_JitTexture->SetTexParameteri(GL_TEXTURE_WRAP_T, GL_REPEAT);
+	m_JitTexture->SetTexParameteri(GL_TEXTURE_WRAP_R, GL_REPEAT);
+}
+
+
+void ShadowMap::SampleCircularOffset(std::vector<unsigned char>& v, int n, float rMin, float deltaR, float tetaMin, float deltaTeta, bool jittered)
+{
+	float jitR = 0.0, jitTeta = 0.0;
+	while(n--)
 		{
 			if (jittered)
 			{
-				jitR = (float)std::rand() / RAND_MAX;
-				jitTeta = 0.25 * (float)std::rand() / RAND_MAX;
+				jitR = deltaR * (float)std::rand() / (float)RAND_MAX;
+				jitTeta = deltaTeta * (float)std::rand() / (float)RAND_MAX;
 			}
 
-			float x = sqrt(r + jitR) * glm::cos(2 * glm::pi<float>() * (teta + jitTeta));
-			float y = sqrt(r + jitR) * glm::sin(2 * glm::pi<float>() * (teta + jitTeta));
-			m_Offsets.push_back(std::make_pair(x, y));
+			float x = sqrt(rMin + jitR) * glm::cos(2 * glm::pi<float>() * (tetaMin + jitTeta));
+			float y = sqrt(rMin + jitR) * glm::sin(2 * glm::pi<float>() * (tetaMin + jitTeta));
+
+			// transforming from [-1, 1] to [0, 255]
+			unsigned char xByte = (unsigned char) round(255 * ((x + 1.0) / 2.0));
+			unsigned char yByte = (unsigned char) round(255 * ((y + 1.0) / 2.0));
+			v.push_back(xByte);
+			v.push_back(yByte);
 		}
 }
 
-void ShadowMap::GenerateSquareOffsets(int nSamples, bool jittered /*= true*/)
+void ShadowMap::GenerateJitTexture(int samplesPerPixel, int width, int height, int radius, unsigned int slot)
 {
-	m_Offsets.clear();
-	float jitR = 0.0, jitTeta = 0.0;
-	int limit = std::sqrt(nSamples);
-
-	for (int i = -limit / 2; i <= limit / 2; i++)
-		for (int j = -limit / 2; j <= limit / 2; j++)
-		{
-			if (jittered)
-			{
-				jitR = (float)std::rand() / RAND_MAX;
-				jitTeta = 0.25 * (float)std::rand() / RAND_MAX;
-			}
-
-			float jitX = -0.5 + (float)std::rand() / RAND_MAX;
-			float jitY = -0.5 + (float)std::rand() / RAND_MAX;
-			m_Offsets.push_back(std::make_pair(i + jitX, j + jitY));
-		}
+	// allocate 3D vector of RGBA bytes
+	std::vector<unsigned char> jitData;
+	float rInc = 1.0 / (float) radius;
+	float tetaInc = (float) radius / (float) samplesPerPixel;
+	for (float r = 0.0; r < 1.0; r += rInc)
+		for (float teta = 0.0; teta < 1.0; teta += tetaInc)
+			SampleCircularOffset(jitData, width * height, r, rInc, teta, tetaInc, true);
+	
+	LoadJitTexture(samplesPerPixel, width, height, slot, jitData.data());
 }
+
 
 void ShadowMap::BindForReading()
 {
-	m_Texture->Bind();
+	if (m_Texture) m_Texture->Bind();
+	if (m_JitTexture) m_JitTexture->Bind();
 }
 
-void ShadowMap::BindForReading(unsigned int slot)
+void ShadowMap::BindForReading(unsigned int slot, unsigned int jitSlot)
 {
-	m_Texture->Bind(slot);
+	if (m_Texture) m_Texture->Bind(slot);
+	if (m_JitTexture) m_JitTexture->Bind(jitSlot);
 }
 
 void ShadowMap::UnbindForReading()
 {
-	m_Texture->Unbind();
+	if (m_Texture) m_Texture->Unbind();
+	if (m_JitTexture) m_JitTexture->Unbind();
 }
 
 void ShadowMap::SetAsRenderTarget(Renderer& renderer)

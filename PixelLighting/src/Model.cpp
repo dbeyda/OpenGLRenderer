@@ -89,12 +89,19 @@ void Model::Bind(Shader& shader)
 
 	if (m_HasAmbientTexture)	m_AmbientTexture->Bind();
 	if (m_HasDiffuseTexture)	m_DiffuseTexture->Bind();
-	if (m_HasBumpTexture)	m_BumpTexture->Bind();
+	if (m_HasBumpTexture && m_BumpTexture)	m_BumpTexture->Bind();
 }
 
 void Model::Draw(Shader& shader)
 {
 	m_Renderer.Draw(*m_Va, *m_Ib, shader);
+}
+
+void Model::Unbind()
+{
+	if (m_HasAmbientTexture)	m_AmbientTexture->Unbind();
+	if (m_HasDiffuseTexture)	m_DiffuseTexture->Unbind();
+	if (m_HasBumpTexture && m_BumpTexture)	m_BumpTexture->Unbind();
 }
 
 std::string Model::GetLabel()

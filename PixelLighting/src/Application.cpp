@@ -1,4 +1,7 @@
-#define SAMPLES_COUNT 64
+#define SHADOWMAP_SAMPLES 32
+#define JITTER_MAP_WIDTH 128
+#define JITTER_MAP_HEIGHT 128
+#define JITTER_MAP_RADIUS 4
 
 #include <iostream>
 #include <fstream>
@@ -38,7 +41,7 @@ float SHADOW_NEAR = 0.1f;
 float SHADOW_FAR = 5000.0f;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0, 1.0, 0.0));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -59,12 +62,6 @@ int sexp = 30;
 
 int main(void)
 {
-	// system("PAUSE");
-
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
-	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
 	GLFWwindow* window;
 
 	/* Initialize the library */
@@ -142,7 +139,7 @@ int main(void)
 
 		ShadowMap shadowMap(3);
 		shadowMap.LoadShadowTexture(SHADOW_WIDTH, SHADOW_HEIGHT, GL_FLOAT);
-		shadowMap.GenerateCircularOffsets(SAMPLES_COUNT);
+		shadowMap.GenerateJitTexture(SHADOWMAP_SAMPLES, JITTER_MAP_WIDTH, JITTER_MAP_HEIGHT, JITTER_MAP_RADIUS, 4);
 
 		float rotation = 0.0f;
 		float increment = 0.3f;
@@ -174,14 +171,12 @@ int main(void)
 			// ------- 1st Pass: shadow map
 			
 			glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, SHADOW_NEAR, SHADOW_FAR);
-			glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, cameraUp);
+			glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, camera.Up);
 			glm::mat4 lightVp = lightProjection * lightView;
 			
 			shadowMap.SetAsRenderTarget(renderer);
 			renderer.Clear(GL_DEPTH_BUFFER_BIT);
 			zShader.Bind();
-			zShader.SetUniform1f("u_far", SHADOW_FAR);
-			zShader.SetUniform1f("u_near", SHADOW_NEAR);
 
 			for (Model* m : models)
 			{
@@ -204,9 +199,6 @@ int main(void)
 			renderer.Clear();
 			shader.Bind();
 
-			shader.SetUniformVec2f("offsets", shadowMap.m_Offsets);
-
-			
 			glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
 			glm::mat4 cameraView = camera.GetViewMatrix();
 			glm::mat4 invTransCameraView = glm::inverseTranspose(cameraView);
@@ -225,9 +217,14 @@ int main(void)
 			);
 			glm::mat4 depthBiasMVP = biasMatrix * lightVp;
 
-			// shadowMapTex.Bind(3);
-			shadowMap.BindForReading(3);
-			shader.SetUniform1i("samplers.DepthMap", 3);
+			shadowMap.BindForReading(3, 4);
+			shader.SetUniform1f("shadowMap.blur", shadowMap.m_Blur);
+			shader.SetUniform1f("shadowMap.samplesCount", (float) SHADOWMAP_SAMPLES);
+			shader.SetUniform1f("shadowMap.jitterMapWidth", (float) JITTER_MAP_WIDTH);
+			shader.SetUniform1f("shadowMap.jitterMapHeight", (float) JITTER_MAP_HEIGHT);
+			shader.SetUniform1f("shadowMap.jitterRadius", (float) JITTER_MAP_RADIUS);
+			shader.SetUniform1i("shadowMap.DepthMap", 3);
+			shader.SetUniform1i("shadowMap.JitOffsets", 4);
 			shader.SetUniform4f("u_globalLightColor", globalLightColor.r, globalLightColor.g, globalLightColor.b, 1.0f);
 			shader.SetUniform1f("u_globalLightStrength", globalLightStrength);
 			shader.SetUniform3f("light.cameraSpacePos", cameraLightPos.x, cameraLightPos.y, cameraLightPos.z);
@@ -253,13 +250,13 @@ int main(void)
 				shader.SetUniformMat4f("u_invTransMV", invTransMv);
 
 				m->Bind(shader);
-				shader.SetUniform1i("material.hasBumpTexture", useBumpTexture);
+				if (m->m_HasBumpTexture)
+					shader.SetUniform1i("material.hasBumpTexture", useBumpTexture);
 				shader.SetUniformMat4f("u_DepthMvp", depthBiasMVP * model);
 				shader.SetUniformMat4f("u_lightVp", lightVp * model);
 
-				// TODO: remove this
-				shader.SetUniform1i("material.hasBumpTexture", 0);
 				m->Draw(shader);
+				m->Unbind();
 			}
 			
 			rotation += increment;
@@ -268,9 +265,9 @@ int main(void)
 			{
 				ImGui::Begin("Camera");
 				ImGui::Text("FPS (%.1f FPS)", ImGui::GetIO().Framerate);
-				ImGui::Text("Camera position");                           // Display some text (you can use a format string too)
+				ImGui::Text("Camera position");
 				ImGui::SliderFloat3("x y z", glm::value_ptr(camera.Position), -5000.0f, 5000.0f, nullptr, 5.0f);
-				if (ImGui::Button("Reset Camera"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
+				if (ImGui::Button("Reset Camera"))
 					camera.Position = glm::vec3(0);
 				ImGui::End();
 
@@ -283,6 +280,9 @@ int main(void)
 				ImGui::InputFloat("kl", &kl, 0.05, 0.1);
 				ImGui::InputFloat("kq", &kq, 0.005, 0.01);
 				ImGui::SliderInt("sexp", &sexp, 0, 128);
+
+				ImGui::Text("\Shadows:");
+				ImGui::SliderFloat("Blur", &shadowMap.m_Blur, 0.0, 1.0);
 				
 				ImGui::Text("\nOther:");
 				ImGui::SliderFloat("rotationSpeed", &increment, 0, 10);
