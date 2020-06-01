@@ -80,7 +80,6 @@ void Texture::TexImage3D(unsigned int target, int internalFormat, int width, int
 	m_Height = height;
 	m_Depth = depth;
 	Bind(m_Slot);
-	//GLCall(glTexImage3D(target, 0, internalFormat, width, height, depth, 0, format, type, data));
 	GLCall(glTexStorage3D(target, 1, internalFormat, width, height, depth));
 	GLCall(glTexSubImage3D(target, 0, 0, 0, 0, width, height, depth, format, type, data));
 	Unbind();

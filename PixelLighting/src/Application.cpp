@@ -1,7 +1,7 @@
-#define SHADOWMAP_SAMPLES 32
-#define JITTER_MAP_WIDTH 128
-#define JITTER_MAP_HEIGHT 128
-#define JITTER_MAP_RADIUS 4
+#define SHADOWMAP_SAMPLES 64
+#define JITTER_MAP_WIDTH 164
+#define JITTER_MAP_HEIGHT 64
+#define JITTER_MAP_RADIUS 2
 
 #include <iostream>
 #include <fstream>
@@ -38,7 +38,7 @@ unsigned int SCR_HEIGHT = 768;
 int SHADOW_WIDTH = 768;
 int SHADOW_HEIGHT = 768;
 float SHADOW_NEAR = 0.1f;
-float SHADOW_FAR = 5000.0f;
+float SHADOW_FAR = 60.0f;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0, 1.0, 0.0));
