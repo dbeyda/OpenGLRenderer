@@ -147,6 +147,7 @@
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\FrameBuffer.cpp" />
     <ClCompile Include="src\IndexBuffer.cpp" />
+    <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\Model.cpp" />
     <ClCompile Include="src\Obj.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
@@ -308,6 +309,7 @@
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\FrameBuffer.h" />
     <ClInclude Include="src\IndexBuffer.h" />
+    <ClInclude Include="src\Light.h" />
     <ClInclude Include="src\Model.h" />
     <ClInclude Include="src\Obj.h" />
     <ClInclude Include="src\Renderer.h" />
