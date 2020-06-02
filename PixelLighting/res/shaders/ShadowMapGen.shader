@@ -1,0 +1,1 @@
+#shader vertex#version 410 corelayout(location = 0) in vec4 position;   /* vertex position */uniform mat4 u_MVP;                      /* object MVP matrix */void main(){    gl_Position = u_MVP * position;};#shader fragment#version 410 corelayout(location = 0) out float fragDepth;void main(){    fragDepth = gl_FragCoord.z;};

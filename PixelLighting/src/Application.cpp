@@ -1,3 +1,8 @@
+#define SHADOWMAP_SAMPLES 64
+#define JITTER_MAP_WIDTH 164
+#define JITTER_MAP_HEIGHT 64
+#define JITTER_MAP_RADIUS 2
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -10,6 +15,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
+#include "ShadowMap.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -29,9 +35,13 @@ unsigned int useBumpTexture = 0;
 // settings
 unsigned int SCR_WIDTH = 1024;
 unsigned int SCR_HEIGHT = 768;
+int SHADOW_WIDTH = 768;
+int SHADOW_HEIGHT = 768;
+float SHADOW_NEAR = 0.1f;
+float SHADOW_FAR = 60.0f;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0, 1.0, 0.0));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -52,12 +62,6 @@ int sexp = 30;
 
 int main(void)
 {
-	// system("PAUSE");
-
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
-	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
 	GLFWwindow* window;
 
 	/* Initialize the library */
@@ -102,9 +106,10 @@ int main(void)
 		
 		Renderer renderer;
 		
+		// ----------- Models
 		std::string golfballPath = "res/models/golfball/golfball.obj";
 		Model golfball("Golfball", golfballPath, renderer);
-		golfball.m_Model = glm::translate(golfball.m_Model, glm::vec3(0, -7, 0));
+		golfball.m_Model = glm::translate(golfball.m_Model, glm::vec3(0, -7.8, 0));
 		
 		std::string stonesPath = "res/models/stones/stones.obj";
 		Model stones("Stones", stonesPath, renderer);
@@ -120,11 +125,21 @@ int main(void)
 		stonesBottom.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(-10, -10, 10));
 		stonesBottom.m_Model = glm::scale(stonesBottom.m_Model, glm::vec3(20, 20, 20));
 		stonesBottom.m_Model = glm::rotate(stonesBottom.m_Model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-
+		stonesBottom.m_HasAmbientTexture = 0;
+		stonesBottom.m_HasDiffuseTexture = 0;
+		stonesBottom.m_HasBumpTexture = 0;
 
 		std::vector<Model*> models({ &golfball, &stones, &stonesLeft, &stonesBottom});
-		Shader shader("res/shaders/PhongBumpMap.shader");
+		
+		// ----------- Shaders
+		Shader shader("res/shaders/PhongShadow.shader");
 		shader.Bind();
+
+		Shader zShader("res/shaders/ShadowMapGen.shader");
+
+		ShadowMap shadowMap(3);
+		shadowMap.LoadShadowTexture(SHADOW_WIDTH, SHADOW_HEIGHT, GL_FLOAT);
+		shadowMap.GenerateJitTexture(SHADOWMAP_SAMPLES, JITTER_MAP_WIDTH, JITTER_MAP_HEIGHT, JITTER_MAP_RADIUS, 4);
 
 		float rotation = 0.0f;
 		float increment = 0.3f;
@@ -133,12 +148,14 @@ int main(void)
 		ImGui_ImplGlfwGL3_Init(window, true);
 		ImGui::StyleColorsDark();
 
-
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
 		{
+
 			// per-frame time logic
 			// --------------------
+			glm::mat4 golfballRotatedModel = glm::rotate(golfball.m_Model, glm::radians(rotation), glm::vec3(1, 0, 0));
+
 			float currentFrame = glfwGetTime();
 			deltaTime = currentFrame - lastFrame;
 			lastFrame = currentFrame;
@@ -147,61 +164,110 @@ int main(void)
 			// -----
 			processInput(window);
 
-			glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
-			glm::mat4 view = camera.GetViewMatrix();
+			glm::vec3 spotLightDir = glm::normalize(glm::vec3(-1.5, -1, -1.5));
+			glm::vec3 spotLightPos = glm::vec3(10, 0.5, 10);
+			glm::mat4 spotLightModel = glm::translate(glm::mat4(1.0f), spotLightPos);
+			
+			// ------- 1st Pass: shadow map
+			
+			glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, SHADOW_NEAR, SHADOW_FAR);
+			glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, camera.Up);
+			glm::mat4 lightVp = lightProjection * lightView;
+			
+			shadowMap.SetAsRenderTarget(renderer);
+			renderer.Clear(GL_DEPTH_BUFFER_BIT);
+			zShader.Bind();
+
+			for (Model* m : models)
+			{
+				// Draw each model
+				glm::mat4 model;
+				if (m->GetLabel() == "Golfball")
+					model = golfballRotatedModel;
+				else
+					model = m->m_Model;
+				glm::mat4 lightMvp = lightVp * model;
+				zShader.SetUniformMat4f("u_MVP", lightMvp);
+				m->Draw(zShader);
+			}
+			shadowMap.ResetAsRenderTarget();
+			
+			
+			// --------- 2nd Pass: lighting
+			renderer.SetViewport((int) SCR_WIDTH, (int) SCR_HEIGHT);
+			renderer.SetDrawBuffer(GL_BACK);
+			renderer.Clear();
+			shader.Bind();
+
+			glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
+			glm::mat4 cameraView = camera.GetViewMatrix();
+			glm::mat4 invTransCameraView = glm::inverseTranspose(cameraView);
 
 			// Light
-			glm::vec3 spotLightDir = glm::vec3(0, 0, 0);
-			glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), glm::vec3(10, 0.5, 10));
-			glm::mat4 lightMv = view * lightModel;
-			glm::mat4 invTransMvLight = glm::inverseTranspose(lightMv);
+			glm::vec3 cameraLightPos = cameraView * glm::vec4(spotLightPos, 1.0f);
+			glm::vec3 cameraSpotLightDir = invTransCameraView * glm::vec4(spotLightDir, 1.0f);
+			cameraSpotLightDir = glm::normalize(cameraSpotLightDir);
 
-			glm::vec3 mvLightPos = lightMv * glm::vec4(0, 0, 0, 1);
-			glm::vec3 mvSpotLightDir = invTransMvLight * glm::vec4(-1.5, -1, -1.5, 1);
+			// Shadow
+			glm::mat4 biasMatrix(
+				0.5, 0.0, 0.0, 0.0,
+				0.0, 0.5, 0.0, 0.0,
+				0.0, 0.0, 0.5, 0.0,
+				0.5, 0.5, 0.5, 1.0
+			);
+			glm::mat4 depthBiasMVP = biasMatrix * lightVp;
 
-			/* Render here */
-			renderer.Clear();
-
-			shader.Bind();
+			shadowMap.BindForReading(3, 4);
+			shader.SetUniform1f("shadowMap.blur", shadowMap.m_Blur);
+			shader.SetUniform1f("shadowMap.samplesCount", (float) SHADOWMAP_SAMPLES);
+			shader.SetUniform1f("shadowMap.jitterMapWidth", (float) JITTER_MAP_WIDTH);
+			shader.SetUniform1f("shadowMap.jitterMapHeight", (float) JITTER_MAP_HEIGHT);
+			shader.SetUniform1f("shadowMap.jitterRadius", (float) JITTER_MAP_RADIUS);
+			shader.SetUniform1i("shadowMap.DepthMap", 3);
+			shader.SetUniform1i("shadowMap.JitOffsets", 4);
 			shader.SetUniform4f("u_globalLightColor", globalLightColor.r, globalLightColor.g, globalLightColor.b, 1.0f);
 			shader.SetUniform1f("u_globalLightStrength", globalLightStrength);
-			shader.SetUniform3f("u_mvLightPos", mvLightPos.x, mvLightPos.y, mvLightPos.z);
-			shader.SetUniform3f("u_mvSpotLightDir", mvSpotLightDir.x, mvSpotLightDir.y, mvSpotLightDir.z);
-			shader.SetUniform1f("u_kc", kc);
-			shader.SetUniform1f("u_kl", kl);
-			shader.SetUniform1f("u_kq", kq);
-			shader.SetUniform1i("u_sexp", sexp);
+			shader.SetUniform3f("light.cameraSpacePos", cameraLightPos.x, cameraLightPos.y, cameraLightPos.z);
+			shader.SetUniform3f("light.cameraSpaceDir", cameraSpotLightDir.x, cameraSpotLightDir.y, cameraSpotLightDir.z);
+			shader.SetUniform1f("light.kc", kc);
+			shader.SetUniform1f("light.kl", kl);
+			shader.SetUniform1f("light.kq", kq);
+			shader.SetUniform1i("light.sexp", sexp);
 
 			for (Model *m : models)
 			{
 				// Draw each model
 				glm::mat4 model;
 				if (m->GetLabel() == "Golfball")
-					model = glm::rotate(m->m_Model, glm::radians(rotation), glm::vec3(1, 0, 0));
+					model = golfballRotatedModel;
 				else
 					model = m->m_Model;
-				glm::mat4 mvp = projection * view * model;
-				glm::mat4 mv = view * model;
-				glm::mat4 invTransMv = glm::inverseTranspose(view * model);
-
+				glm::mat4 mvp = cameraProjection * cameraView * model;
+				glm::mat4 mv = cameraView * model;
+				glm::mat4 invTransMv = glm::inverseTranspose(cameraView * model);
 				shader.SetUniformMat4f("u_MVP", mvp);
 				shader.SetUniformMat4f("u_MV", mv);
 				shader.SetUniformMat4f("u_invTransMV", invTransMv);
 
 				m->Bind(shader);
-				shader.SetUniform1i("u_hasBumpTexture", useBumpTexture);
-				m->Draw(shader);
-			}
+				if (m->m_HasBumpTexture)
+					shader.SetUniform1i("material.hasBumpTexture", useBumpTexture);
+				shader.SetUniformMat4f("u_DepthMvp", depthBiasMVP * model);
+				shader.SetUniformMat4f("u_lightVp", lightVp * model);
 
+				m->Draw(shader);
+				m->Unbind();
+			}
+			
 			rotation += increment;
 
 			ImGui_ImplGlfwGL3_NewFrame();
 			{
 				ImGui::Begin("Camera");
 				ImGui::Text("FPS (%.1f FPS)", ImGui::GetIO().Framerate);
-				ImGui::Text("Camera position");                           // Display some text (you can use a format string too)
+				ImGui::Text("Camera position");
 				ImGui::SliderFloat3("x y z", glm::value_ptr(camera.Position), -5000.0f, 5000.0f, nullptr, 5.0f);
-				if (ImGui::Button("Reset Camera"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
+				if (ImGui::Button("Reset Camera"))
 					camera.Position = glm::vec3(0);
 				ImGui::End();
 
@@ -214,6 +280,9 @@ int main(void)
 				ImGui::InputFloat("kl", &kl, 0.05, 0.1);
 				ImGui::InputFloat("kq", &kq, 0.005, 0.01);
 				ImGui::SliderInt("sexp", &sexp, 0, 128);
+
+				ImGui::Text("\Shadows:");
+				ImGui::SliderFloat("Blur", &shadowMap.m_Blur, 0.0, 1.0);
 				
 				ImGui::Text("\nOther:");
 				ImGui::SliderFloat("rotationSpeed", &increment, 0, 10);
