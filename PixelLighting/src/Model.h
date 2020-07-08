@@ -4,7 +4,10 @@
 #include "VertexBuffer.h"
 #include "VertexBufferLayout.h"
 #include "Texture.h"
+#include "Obj.h"
 #include "Renderer.h"
+#include "OpenGLHelper.h"
+
 #include "glm/glm.hpp"
 
 class Model

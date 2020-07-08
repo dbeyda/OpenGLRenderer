@@ -3,6 +3,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "OpenGLHelper.h"
+
 #include "glm/glm.hpp"
 
 struct ShaderProgramSource {

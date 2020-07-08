@@ -1,6 +1,6 @@
 #include <iostream>
 #include "FrameBuffer.h"
-#include "Renderer.h"
+#include "OpenGLHelper.h"
 
 
 FrameBuffer::FrameBuffer(unsigned int target)

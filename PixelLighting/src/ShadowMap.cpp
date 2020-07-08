@@ -108,15 +108,4 @@ void ShadowMap::UnbindForReading()
 	if (m_JitTexture) m_JitTexture->Unbind();
 }
 
-void ShadowMap::SetAsRenderTarget(Renderer& renderer)
-{
-	m_Fbo->Bind();
-	renderer.SetViewport(m_Width, m_Height);
-	renderer.SetDrawBuffer(GL_NONE);
-}
-
-void ShadowMap::ResetAsRenderTarget()
-{
-	m_Fbo->Unbind();
-}
 

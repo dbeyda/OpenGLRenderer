@@ -1,6 +1,5 @@
 #include <iostream>
 #include "Texture.h"
-#include "stb_image/stb_image.h"
 
 std::string getFileExtension(std::string& filepath);
 

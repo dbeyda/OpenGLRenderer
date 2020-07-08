@@ -1,7 +1,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "Obj.h";
 #include "glm/glm.hpp"
-#include "Renderer.h"
+#include "OpenGLHelper.h"
 
 
 Obj::Obj(const std::string& path)

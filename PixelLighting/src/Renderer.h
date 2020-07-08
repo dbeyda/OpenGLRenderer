@@ -1,26 +1,25 @@
 #pragma once
 
-#include <GL/glew.h>
-
 #include "VertexArray.h"
 #include "IndexBuffer.h"
 #include "Shader.h"
-
-
-#define ASSERT(x) if (!(x)) __debugbreak();
-#define GLCall(x) GLClearError();\
-    x;\
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-
-void GLClearError();
-bool GLLogCall(const char* function, const char* file, int line);
+#include "FrameBuffer.h"
+#include "OpenGLHelper.h"
 
 class Renderer
 {
 public:
+    FrameBuffer* m_TargetFbo;
+    int m_DefaultViewportWidth, m_DefaultViewportHeight;
+
+    Renderer();
+    Renderer(int width, int height);
     void Clear() const;
     void Clear(unsigned int bufferEnum);
     void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader) const;
     void SetViewport(int width, int height);
     void SetDrawBuffer(unsigned int drawBuffer);
+    void SetRenderTarget(FrameBuffer* fbo, int vwWidth, int vwHeight, int drawBuffer);
+    void ResetRenderTarget();
+    void UpdateDefaultViewport(int width, int height);
 };

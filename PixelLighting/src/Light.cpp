@@ -1,7 +1,7 @@
 #include "Light.h"
 
-Light::Light(LightType type, glm::vec3 position, glm::vec3 direction, glm::vec4 color)
-	:m_Type(type), m_Position(position), m_Direction(direction), m_Color(color)
+Light::Light(LightType type, glm::vec3 position, glm::vec3 direction, float sexp, glm::vec4 color)
+	:m_Type(type), m_Position(position), m_Direction(direction), m_Color(color), m_SpotExponent(sexp)
 {}
 
 Light::~Light()

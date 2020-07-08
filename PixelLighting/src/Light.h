@@ -18,9 +18,9 @@ public:
 	glm::vec3 m_Direction;
 	glm::vec4 m_Color;
 
-	float m_spotExponent;
+	float m_SpotExponent;
 
-	Light(LightType type, glm::vec3 position, glm::vec3 direction = glm::vec3(0.0, 0.0, 0.0), glm::vec4 color = glm::vec4(1.0, 1.0, 1.0, 1.0));
+	Light(LightType type, glm::vec3 position, glm::vec3 direction = glm::vec3(0.0, 0.0, 0.0), float sexp = 1.0, glm::vec4 color = glm::vec4(1.0, 1.0, 1.0, 1.0));
 	~Light();
 	glm::mat4 GetViewProjection(float fovy, float aspect, float near, float far);
 	void SetRGB(int r, int g, int b, int a = 255);

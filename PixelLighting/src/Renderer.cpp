@@ -1,26 +1,14 @@
 
 #include "Renderer.h"
-
 #include <iostream>
 
-void GLClearError()
-{
-    while (glGetError() != GL_NO_ERROR);
-}
+Renderer::Renderer()
+    :m_TargetFbo(nullptr), m_DefaultViewportWidth(1280), m_DefaultViewportHeight(720)
+{}
 
-bool GLLogCall(const char* function, const char* file, int line)
-{
-    while (GLenum error = glGetError())
-    {
-        std::cout << std::endl;
-        std::cout << "[OpenGL Error] (" << error << "): "
-                  << glewGetErrorString(error) << std::endl;
-        std::cout << "> Func: " << function <<
-            std::endl << "> File: " << file << ":" << line << '\n' << std::endl;
-        return false;
-    }
-    return true;
-}
+Renderer::Renderer(int width, int height)
+    : m_TargetFbo(nullptr), m_DefaultViewportWidth(width), m_DefaultViewportHeight(height)
+{}
 
 void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader) const
 {
@@ -57,4 +45,26 @@ void Renderer::Clear() const
 void Renderer::Clear(unsigned int bufferEnum)
 {
     GLCall(glClear(bufferEnum));
+}
+
+void Renderer::SetRenderTarget(FrameBuffer* fbo, int vwWidth, int vwHeight, int drawBuffer = GL_COLOR_ATTACHMENT0)
+{
+    m_TargetFbo = fbo;
+    m_TargetFbo->Bind();
+    SetViewport(vwWidth, vwHeight);
+    SetDrawBuffer(drawBuffer);
+}
+
+void Renderer::ResetRenderTarget()
+{
+    m_TargetFbo->Unbind();
+    m_TargetFbo = nullptr;
+    SetViewport(m_DefaultViewportWidth, m_DefaultViewportHeight);
+    SetDrawBuffer(GL_BACK);
+}
+
+void Renderer::UpdateDefaultViewport(int width, int height)
+{
+    m_DefaultViewportWidth = width;
+    m_DefaultViewportHeight = height;
 }

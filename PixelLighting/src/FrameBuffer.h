@@ -11,7 +11,7 @@ public:
 	FrameBuffer(unsigned int TARGET);
 	~FrameBuffer();
 
-	void AttachTexture(unsigned int attachment, Texture& texture);
+	void AttachTexture(unsigned int attachment, Texture &texture);
 	void Bind();
 	void Unbind();
 	bool Check();

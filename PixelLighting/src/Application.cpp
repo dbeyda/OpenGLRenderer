@@ -11,12 +11,11 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "Renderer.h"
-#include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
 #include "Light.h"
 #include "ShadowMap.h"
+#include "DepthOfField.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -95,6 +94,8 @@ int main(void)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
+	glfwSwapInterval(0);
+
 
 	if (glewInit() != GLEW_OK) {
 		std::cout << "Error" << std::endl;
@@ -105,7 +106,8 @@ int main(void)
 		GLCall(glEnable(GL_BLEND));
 		GLCall(glBlendFunc(GL_ONE, GL_ONE));
 		
-		Renderer renderer;
+		Renderer renderer(SCR_WIDTH, SCR_HEIGHT);
+		//DepthOfField(SCR_WIDTH, SCR_HEIGHT, SCR_WIDTH / 4, SCR_HEIGHT / 4);
 
 		// ----------- Models
 		std::string golfballPath = "res/models/golfball/golfball.obj";
@@ -122,6 +124,11 @@ int main(void)
 		stonesLeft.m_Model = glm::scale(stonesLeft.m_Model, glm::vec3(20, 20, 20));
 		stonesLeft.m_Model = glm::rotate(stonesLeft.m_Model, glm::radians(90.0f), glm::vec3(0, 1, 0));
 
+		Model stonesRight("Stones", stonesPath, renderer);
+		stonesRight.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(10, -10, -10));
+		stonesRight.m_Model = glm::scale(stonesRight.m_Model, glm::vec3(20, 20, 20));
+		stonesRight.m_Model = glm::rotate(stonesRight.m_Model, glm::radians(-90.0f), glm::vec3(0, 1, 0));
+
 		Model stonesBottom("Stones", stonesPath, renderer);
 		stonesBottom.m_Model = glm::translate(glm::mat4(1.0f), glm::vec3(-10, -10, 10));
 		stonesBottom.m_Model = glm::scale(stonesBottom.m_Model, glm::vec3(20, 20, 20));
@@ -130,19 +137,20 @@ int main(void)
 		stonesBottom.m_HasDiffuseTexture = 0;
 		stonesBottom.m_HasBumpTexture = 0;
 
-		std::vector<Model*> models({ &golfball, &stones, &stonesLeft, &stonesBottom});
+		std::vector<Model*> models({ &golfball, &stones, &stonesLeft, &stonesBottom, &stonesRight});
 		
 		// ----------- Lights
 
 		glm::vec3 spotLightDir = glm::normalize(glm::vec3(-1.5, -1, -1.5));
 		glm::vec3 spotLightPos = glm::vec3(10, 0.5, 10);
 		
-		Light spotlight1(Light::LightType::Spotlight, glm::vec3(9, -3, 8), glm::normalize(glm::vec3(-1, -0.5, -1)));
-		Light spotlight2(Light::LightType::Spotlight, glm::vec3(-9, -3, 8), glm::normalize(glm::vec3(1, -0.5, -1)));
-		Light spotlight3(Light::LightType::Spotlight, glm::vec3(0, -3, 8), glm::normalize(glm::vec3(0, -1, -2)));
+		Light spotlight1(Light::LightType::Spotlight, glm::vec3(9, -3, 8), glm::normalize(glm::vec3(-1, -0.5, -0.9)), 33.0);
+		Light spotlight2(Light::LightType::Spotlight, glm::vec3(-9, -3, 8), glm::normalize(glm::vec3(1, -0.5, -0.9)), 33.0);
+		Light spotlight3(Light::LightType::Spotlight, glm::vec3(0, -3, 8), glm::normalize(glm::vec3(0, -1, -2)), 33.0);
 
 		spotlight1.SetRGB(0, 255, 0);
 		spotlight2.SetRGB(0, 0, 255);
+		spotlight3.SetRGB(255, 0, 0);
 
 		std::vector<Light*> lights({ &spotlight1, &spotlight2, &spotlight3 });
 		// ----------- Shaders
@@ -165,6 +173,9 @@ int main(void)
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
 		{
+			processInput(window);
+			renderer.Clear();
+			renderer.UpdateDefaultViewport(SCR_WIDTH, SCR_HEIGHT);
 
 			// per-frame time logic
 			// --------------------
@@ -174,12 +185,6 @@ int main(void)
 			deltaTime = currentFrame - lastFrame;
 			lastFrame = currentFrame;
 
-			// input
-			// -----
-			processInput(window);
-
-			renderer.Clear();
-
 
 			for (Light* l : lights)
 			{
@@ -188,7 +193,7 @@ int main(void)
 				//glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, camera.Up);
 				//glm::mat4 lightVp = lightProjection * lightView;
 
-				shadowMap.SetAsRenderTarget(renderer);
+				renderer.SetRenderTarget(shadowMap.m_Fbo, shadowMap.m_Width, shadowMap.m_Height, GL_NONE);
 				renderer.Clear(GL_DEPTH_BUFFER_BIT);
 				zShader.Bind();
 
@@ -206,12 +211,11 @@ int main(void)
 					zShader.SetUniformMat4f("u_MVP", lightMvp);
 					m->Draw(zShader);
 				}
-				shadowMap.ResetAsRenderTarget();
 
-
+				
 				// --------- 2nd Pass: lighting
-				renderer.SetViewport((int)SCR_WIDTH, (int)SCR_HEIGHT);
-				renderer.SetDrawBuffer(GL_BACK);
+				
+				renderer.ResetRenderTarget();
 				renderer.Clear(GL_DEPTH_BUFFER_BIT);
 				shader.Bind();
 
@@ -248,7 +252,7 @@ int main(void)
 				shader.SetUniform1f("light.kc", kc);
 				shader.SetUniform1f("light.kl", kl);
 				shader.SetUniform1f("light.kq", kq);
-				shader.SetUniform1i("light.sexp", sexp);
+				shader.SetUniform1i("light.sexp", l->m_SpotExponent);
 				shader.SetUniform3f("light.color", l->m_Color.r, l->m_Color.g, l->m_Color.b);
 
 				for (Model* m : models)
@@ -270,14 +274,20 @@ int main(void)
 					if (m->m_HasBumpTexture)
 						shader.SetUniform1i("material.hasBumpTexture", useBumpTexture);
 					shader.SetUniformMat4f("u_DepthMvp", depthBiasMVP * model);
-					shader.SetUniformMat4f("u_lightVp", lightVp * model);
 
 					m->Draw(shader);
 					m->Unbind();
 				}
 			}
+
+			// ---------------- POST PROCESSING FX
+
+			// Depth Of Field
+
 			
-			
+
+
+			// ---------------- User Interface
 			rotation += increment;
 
 			ImGui_ImplGlfwGL3_NewFrame();
@@ -303,7 +313,7 @@ int main(void)
 				for (Light* l : lights)
 				{
 					ImGui::Text("\nLight %d:", i);
-					ImGui::SliderInt(("sexp " + std::to_string(i)).c_str(), &sexp, 0, 128);
+					ImGui::SliderFloat(("sexp " + std::to_string(i)).c_str(), &(l->m_SpotExponent), 0, 128);
 					ImGui::ColorEdit3(("Light " + std::to_string(i) + " Color").c_str(), glm::value_ptr(l->m_Color));
 					i++;
 				}
