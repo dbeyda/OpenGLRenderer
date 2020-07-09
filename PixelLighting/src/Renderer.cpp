@@ -47,7 +47,7 @@ void Renderer::Clear(unsigned int bufferEnum)
     GLCall(glClear(bufferEnum));
 }
 
-void Renderer::SetRenderTarget(FrameBuffer* fbo, int vwWidth, int vwHeight, int drawBuffer = GL_COLOR_ATTACHMENT0)
+void Renderer::SetRenderTarget(FrameBuffer* fbo, int vwWidth, int vwHeight, int drawBuffer)
 {
     m_TargetFbo = fbo;
     m_TargetFbo->Bind();

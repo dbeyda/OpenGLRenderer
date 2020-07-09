@@ -482,7 +482,8 @@
     <None Include="res\shaders\PhongBumpMap.shader" />
     <None Include="res\shaders\ShadowMapGen.shader" />
     <None Include="res\shaders\PhongShadow.shader" />
-    <None Include="res\shaders\DepthOfField.shader" />
+    <None Include="res\shaders\DoF\DepthOfField.shader" />
+    <None Include="res\shaders\DoF\quad.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VertexBuffer.h">

@@ -35,6 +35,8 @@ unsigned int useBumpTexture = 0;
 // settings
 unsigned int SCR_WIDTH = 1440;
 unsigned int SCR_HEIGHT = 900;
+unsigned int targetWidth = SCR_WIDTH/4;
+unsigned int targetHeight = SCR_HEIGHT/4;
 int SHADOW_WIDTH = 768;
 int SHADOW_HEIGHT = 768;
 float SHADOW_NEAR = 0.1f;
@@ -107,7 +109,8 @@ int main(void)
 		GLCall(glBlendFunc(GL_ONE, GL_ONE));
 		
 		Renderer renderer(SCR_WIDTH, SCR_HEIGHT);
-		//DepthOfField(SCR_WIDTH, SCR_HEIGHT, SCR_WIDTH / 4, SCR_HEIGHT / 4);
+		DepthOfField dof(SCR_WIDTH, SCR_HEIGHT, targetWidth, targetHeight);
+		dof.CreateFullscreenQuadShader("res/shaders/DoF/quad.shader");
 
 		// ----------- Models
 		std::string golfballPath = "res/models/golfball/golfball.obj";
@@ -173,9 +176,12 @@ int main(void)
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
 		{
+
 			processInput(window);
-			renderer.Clear();
 			renderer.UpdateDefaultViewport(SCR_WIDTH, SCR_HEIGHT);
+
+			renderer.SetRenderTarget(dof.m_FullscreenFbo, dof.m_CocWidth, dof.m_CocHeight);
+			renderer.Clear();
 
 			// per-frame time logic
 			// --------------------
@@ -185,16 +191,11 @@ int main(void)
 			deltaTime = currentFrame - lastFrame;
 			lastFrame = currentFrame;
 
-
 			for (Light* l : lights)
 			{
 				// ------- 1st Pass: shadow map
-				//glm::mat4 lightProjection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, SHADOW_NEAR, SHADOW_FAR);
-				//glm::mat4 lightView = glm::lookAt(spotLightPos, spotLightPos + spotLightDir, camera.Up);
-				//glm::mat4 lightVp = lightProjection * lightView;
-
 				renderer.SetRenderTarget(shadowMap.m_Fbo, shadowMap.m_Width, shadowMap.m_Height, GL_NONE);
-				renderer.Clear(GL_DEPTH_BUFFER_BIT);
+				renderer.Clear();
 				zShader.Bind();
 
 				glm::mat4 lightVp = l->GetViewProjection(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, SHADOW_NEAR, SHADOW_FAR);
@@ -212,14 +213,15 @@ int main(void)
 					m->Draw(zShader);
 				}
 
-				
+
 				// --------- 2nd Pass: lighting
 				
-				renderer.ResetRenderTarget();
+				//renderer.ResetRenderTarget();
+				renderer.SetRenderTarget(dof.m_FullscreenFbo, dof.m_CocWidth, dof.m_CocHeight);
 				renderer.Clear(GL_DEPTH_BUFFER_BIT);
 				shader.Bind();
 
-				glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
+				glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)targetWidth / (float)targetHeight, 0.1f, 5000.0f);
 				glm::mat4 cameraView = camera.GetViewMatrix();
 				glm::mat4 invTransCameraView = glm::inverseTranspose(cameraView);
 
@@ -283,6 +285,9 @@ int main(void)
 			// ---------------- POST PROCESSING FX
 
 			// Depth Of Field
+			renderer.ResetRenderTarget();
+			renderer.Clear();
+			dof.Apply(renderer, (float)SCR_WIDTH, (float)SCR_HEIGHT);
 
 			
 

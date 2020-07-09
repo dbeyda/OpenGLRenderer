@@ -167,7 +167,8 @@
   <ItemGroup>
     <None Include="res\shaders\Basic.shader" />
     <None Include="res\shaders\BasicTexture.shader" />
-    <None Include="res\shaders\DepthOfField.shader" />
+    <None Include="res\shaders\DoF\quad.shader" />
+    <None Include="res\shaders\DoF\DepthOfField.shader" />
     <None Include="res\shaders\Phong.shader" />
     <None Include="res\shaders\PhongBumpMap.shader" />
     <None Include="res\shaders\PhongShadow.shader" />
