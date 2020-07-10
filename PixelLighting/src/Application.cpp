@@ -286,9 +286,6 @@ int main(void)
 			// Depth Of Field
 			dof.Apply(renderer);
 
-			
-
-
 			// ---------------- User Interface
 			rotation += increment;
 

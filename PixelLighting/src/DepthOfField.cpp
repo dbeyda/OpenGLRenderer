@@ -3,13 +3,11 @@
 
 DepthOfField::DepthOfField(int scrWidth, int scrHeight, int cocWidth, int cocHeight)
 	: m_ScreenWidth(scrWidth), m_ScreenHeight(scrHeight), m_CocWidth(cocWidth), m_CocHeight(cocHeight),
-	m_FullscreenQuadShader(nullptr), m_FullscreenVB(nullptr), m_FullscreenVAO(nullptr), m_FullscreenIB(nullptr),
-	m_FullscreenVBL(nullptr), m_CocFbo(nullptr), m_CocShader(nullptr)
+	m_FullscreenQuadShader(nullptr), m_FullscreenFbo(nullptr), m_CocFbo(nullptr), m_CocShader(nullptr)
 {
 	if (!m_CocWidth) m_CocWidth = scrWidth;
 	if (!m_CocHeight) m_CocHeight = scrHeight;
 	InitEffect();
-	InitFullscreenQuad();
 }
 
 DepthOfField::~DepthOfField()
@@ -19,10 +17,6 @@ DepthOfField::~DepthOfField()
 	delete m_DepthTex;
 	delete m_CocTex;
 	delete m_FullscreenQuadShader;
-	delete m_FullscreenVAO;
-	delete m_FullscreenVB;
-	delete m_FullscreenVBL;
-	delete m_FullscreenIB;
 	delete m_CocFbo;
 }
 
@@ -63,25 +57,6 @@ void DepthOfField::InitEffect()
 	}
 }
 
-void DepthOfField::InitFullscreenQuad()
-{
-	const float fullscreenPoints[] = {
-	-1.0f, -1.0f, 0.0f,
-	-1.0f,  5.0f, 0.0f,
-	 5.0f, -1.0f, 0.0f
-	};
-	const unsigned int indices[] = {
-	0, 1, 2
-	};
-
-	m_FullscreenVAO = new VertexArray();
-	m_FullscreenVB = new VertexBuffer(fullscreenPoints, 9 * sizeof(float));
-	m_FullscreenVBL = new VertexBufferLayout();
-	m_FullscreenVBL->Push<float>(3); // position
-	m_FullscreenVAO->AddBuffer(*m_FullscreenVB, *m_FullscreenVBL);
-	m_FullscreenIB = new IndexBuffer(indices, 3);
-}
-
 void DepthOfField::CompileFullscreenQuadShader(const std::string& filename)
 {
 	m_FullscreenQuadShader = new Shader(filename);
@@ -103,7 +78,7 @@ void DepthOfField::RenderCircleOfConfusion(Renderer& renderer)
 	m_CocShader->SetUniform1i("samplers.MainSceneDepth", (signed int)m_DepthTex->GetRendererID());
 	m_CocShader->SetUniform2f("viewportSize", (float)m_CocFbo->m_RenderWidth, (float)m_CocFbo->m_RenderHeight);
 	
-	renderer.Draw(*m_FullscreenVAO, *m_FullscreenIB, *m_CocShader);
+	renderer.DrawFullscreenQuad(*m_CocShader);
 }
 
 void DepthOfField::Apply(Renderer& renderer)
@@ -121,5 +96,5 @@ void DepthOfField::Apply(Renderer& renderer)
 	m_FullscreenQuadShader->SetUniform1i("samplers.MainSceneDepth", (signed int)m_DepthTex->GetRendererID());
 	m_FullscreenQuadShader->SetUniform2f("viewportSize", (float) renderer.m_DefaultViewportWidth, (float) renderer.m_DefaultViewportHeight);
 	// draw call
-	renderer.Draw(*m_FullscreenVAO, *m_FullscreenIB, *m_FullscreenQuadShader);
+	renderer.DrawFullscreenQuad(*m_FullscreenQuadShader);
 }

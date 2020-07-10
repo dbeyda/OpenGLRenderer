@@ -13,17 +13,12 @@ class DepthOfField
 {
 private:
 	void InitEffect();
-	void InitFullscreenQuad();
 	void RenderCircleOfConfusion(Renderer& renderer);
 public:
 	int m_ScreenWidth, m_ScreenHeight, m_CocWidth, m_CocHeight;
 	Texture *m_ColorTex, *m_DepthTex, *m_CocTex;
-	FrameBuffer *m_FullscreenFbo, *m_CocFbo;
+	FrameBuffer *m_CocFbo, *m_FullscreenFbo;
 	Shader *m_FullscreenQuadShader, *m_CocShader;
-	VertexBuffer* m_FullscreenVB;
-	VertexArray* m_FullscreenVAO;
-	IndexBuffer* m_FullscreenIB;
-	VertexBufferLayout* m_FullscreenVBL;
 
 	DepthOfField(int scrWidth, int scrHeight, int cocWidth=0, int cocHeight=0);
 	~DepthOfField();
