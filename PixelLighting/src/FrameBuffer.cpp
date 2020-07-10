@@ -3,8 +3,14 @@
 #include "OpenGLHelper.h"
 
 
+FrameBuffer::FrameBuffer(unsigned int target, unsigned int width, unsigned int height)
+	:m_RendererID(0), m_Target(target), m_RenderWidth(width), m_RenderHeight(height)
+{
+	GLCall(glGenFramebuffers(1, &m_RendererID));
+}
+
 FrameBuffer::FrameBuffer(unsigned int target)
-	:m_RendererID(0), m_Target(target)
+	: m_RendererID(0), m_Target(target), m_RenderWidth(0), m_RenderHeight(0)
 {
 	GLCall(glGenFramebuffers(1, &m_RendererID));
 }

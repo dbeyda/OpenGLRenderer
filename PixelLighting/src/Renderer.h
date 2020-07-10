@@ -20,6 +20,7 @@ public:
     void SetViewport(int width, int height);
     void SetDrawBuffer(unsigned int drawBuffer);
     void SetRenderTarget(FrameBuffer* fbo, int vwWidth, int vwHeight, int drawBuffer = GL_COLOR_ATTACHMENT0);
+    void SetRenderTarget(FrameBuffer* fbo, int drawBuffer = GL_COLOR_ATTACHMENT0);
     void ResetRenderTarget();
     void UpdateDefaultViewport(int width, int height);
 };

@@ -484,6 +484,7 @@
     <None Include="res\shaders\PhongShadow.shader" />
     <None Include="res\shaders\DoF\DepthOfField.shader" />
     <None Include="res\shaders\DoF\quad.shader" />
+    <None Include="res\shaders\DoF\CircleOfConfusion.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VertexBuffer.h">

@@ -167,6 +167,7 @@
   <ItemGroup>
     <None Include="res\shaders\Basic.shader" />
     <None Include="res\shaders\BasicTexture.shader" />
+    <None Include="res\shaders\DoF\CircleOfConfusion.shader" />
     <None Include="res\shaders\DoF\quad.shader" />
     <None Include="res\shaders\DoF\DepthOfField.shader" />
     <None Include="res\shaders\Phong.shader" />

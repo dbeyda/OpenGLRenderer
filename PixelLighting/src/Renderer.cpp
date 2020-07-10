@@ -55,6 +55,15 @@ void Renderer::SetRenderTarget(FrameBuffer* fbo, int vwWidth, int vwHeight, int 
     SetDrawBuffer(drawBuffer);
 }
 
+void Renderer::SetRenderTarget(FrameBuffer* fbo, int drawBuffer)
+{
+    m_TargetFbo = fbo;
+    m_TargetFbo->Bind();
+    ASSERT(m_TargetFbo->m_RenderWidth && m_TargetFbo->m_RenderHeight);
+    SetViewport(m_TargetFbo->m_RenderWidth, m_TargetFbo->m_RenderHeight);
+    SetDrawBuffer(drawBuffer);
+}
+
 void Renderer::ResetRenderTarget()
 {
     m_TargetFbo->Unbind();

@@ -31,7 +31,9 @@ void ShadowMap::LoadShadowTexture(int width, int height, unsigned int type)
 
 	m_Texture->SetTexParameteri(GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
 	m_Texture->SetTexParameteri(GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-
+	
+	m_Fbo->m_RenderWidth = m_Width;
+	m_Fbo->m_RenderHeight = m_Height;
 	m_Fbo->AttachTexture(GL_DEPTH_ATTACHMENT, *m_Texture);
 	if (!m_Fbo->Check())
 	{

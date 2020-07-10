@@ -35,8 +35,6 @@ unsigned int useBumpTexture = 0;
 // settings
 unsigned int SCR_WIDTH = 1440;
 unsigned int SCR_HEIGHT = 900;
-unsigned int targetWidth = SCR_WIDTH/4;
-unsigned int targetHeight = SCR_HEIGHT/4;
 int SHADOW_WIDTH = 768;
 int SHADOW_HEIGHT = 768;
 float SHADOW_NEAR = 0.1f;
@@ -109,8 +107,9 @@ int main(void)
 		GLCall(glBlendFunc(GL_ONE, GL_ONE));
 		
 		Renderer renderer(SCR_WIDTH, SCR_HEIGHT);
-		DepthOfField dof(SCR_WIDTH, SCR_HEIGHT, targetWidth, targetHeight);
-		dof.CreateFullscreenQuadShader("res/shaders/DoF/quad.shader");
+		DepthOfField dof(SCR_WIDTH, SCR_HEIGHT, SCR_WIDTH / 16, SCR_HEIGHT / 16);
+		dof.CompileFullscreenQuadShader("res/shaders/DoF/quad.shader");
+		dof.CompileCocShader("res/shaders/DoF/CircleOfConfusion.shader");
 
 		// ----------- Models
 		std::string golfballPath = "res/models/golfball/golfball.obj";
@@ -180,7 +179,7 @@ int main(void)
 			processInput(window);
 			renderer.UpdateDefaultViewport(SCR_WIDTH, SCR_HEIGHT);
 
-			renderer.SetRenderTarget(dof.m_FullscreenFbo, dof.m_CocWidth, dof.m_CocHeight);
+			renderer.SetRenderTarget(dof.m_FullscreenFbo);
 			renderer.Clear();
 
 			// per-frame time logic
@@ -194,7 +193,7 @@ int main(void)
 			for (Light* l : lights)
 			{
 				// ------- 1st Pass: shadow map
-				renderer.SetRenderTarget(shadowMap.m_Fbo, shadowMap.m_Width, shadowMap.m_Height, GL_NONE);
+				renderer.SetRenderTarget(shadowMap.m_Fbo, GL_NONE);
 				renderer.Clear();
 				zShader.Bind();
 
@@ -217,11 +216,11 @@ int main(void)
 				// --------- 2nd Pass: lighting
 				
 				//renderer.ResetRenderTarget();
-				renderer.SetRenderTarget(dof.m_FullscreenFbo, dof.m_CocWidth, dof.m_CocHeight);
+				renderer.SetRenderTarget(dof.m_FullscreenFbo);
 				renderer.Clear(GL_DEPTH_BUFFER_BIT);
 				shader.Bind();
 
-				glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)targetWidth / (float)targetHeight, 0.1f, 5000.0f);
+				glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
 				glm::mat4 cameraView = camera.GetViewMatrix();
 				glm::mat4 invTransCameraView = glm::inverseTranspose(cameraView);
 
@@ -285,9 +284,7 @@ int main(void)
 			// ---------------- POST PROCESSING FX
 
 			// Depth Of Field
-			renderer.ResetRenderTarget();
-			renderer.Clear();
-			dof.Apply(renderer, (float)SCR_WIDTH, (float)SCR_HEIGHT);
+			dof.Apply(renderer);
 
 			
 
