@@ -72,7 +72,6 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string & source
         GLCall(glDeleteShader(id));
         return 0;
     }
-
     return id;
 }
 
@@ -85,6 +84,21 @@ unsigned int Shader::CreateShader(const std::string& vertexShader, const std::st
     GLCall(glAttachShader(program, vs));
     GLCall(glAttachShader(program, fs));
     GLCall(glLinkProgram(program));
+    
+    int result;
+    GLCall(glGetProgramiv(program, GL_LINK_STATUS, &result));
+    if (result == GL_FALSE)
+    {
+        int length;
+        GLCall(glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length));
+        char* message = (char*)alloca(length * sizeof(char));
+        GLCall(glGetProgramInfoLog(program, length, &length, message));
+        std::cout << "Failed to link program " << m_FilePath << std::endl;
+        std::cout << message << std::endl;
+        GLCall(glDeleteProgram(program));
+        exit(1);
+    }
+
     GLCall(glValidateProgram(program));
 
     GLCall(glDeleteShader(vs));
@@ -102,7 +116,6 @@ void Shader::Bind() const
 void Shader::Unbind() const
 {
     GLCall(glUseProgram(0));
-
 }
 
 void Shader::SetUniform3f(const std::string& name, float v0, float v1, float v2)

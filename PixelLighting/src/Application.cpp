@@ -35,6 +35,10 @@ unsigned int useBumpTexture = 0;
 // settings
 unsigned int SCR_WIDTH = 1440;
 unsigned int SCR_HEIGHT = 900;
+float ZFAR = 1000.0f;
+float ZNEAR = 0.1f;
+
+// shadow mapping
 int SHADOW_WIDTH = 768;
 int SHADOW_HEIGHT = 768;
 float SHADOW_NEAR = 0.1f;
@@ -107,9 +111,11 @@ int main(void)
 		GLCall(glBlendFunc(GL_ONE, GL_ONE));
 		
 		Renderer renderer(SCR_WIDTH, SCR_HEIGHT);
-		DepthOfField dof(SCR_WIDTH, SCR_HEIGHT, SCR_WIDTH / 16, SCR_HEIGHT / 16);
+		DepthOfField dof(SCR_WIDTH, SCR_HEIGHT, SCR_WIDTH, SCR_HEIGHT);
 		dof.CompileFullscreenQuadShader("res/shaders/DoF/quad.shader");
 		dof.CompileCocShader("res/shaders/DoF/CircleOfConfusion.shader");
+		dof.CompileBlurShader("res/shaders/DoF/LineBlur.shader");
+
 
 		// ----------- Models
 		std::string golfballPath = "res/models/golfball/golfball.obj";
@@ -220,7 +226,7 @@ int main(void)
 				renderer.Clear(GL_DEPTH_BUFFER_BIT);
 				shader.Bind();
 
-				glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 5000.0f);
+				glm::mat4 cameraProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, ZNEAR, ZFAR);
 				glm::mat4 cameraView = camera.GetViewMatrix();
 				glm::mat4 invTransCameraView = glm::inverseTranspose(cameraView);
 
@@ -284,7 +290,7 @@ int main(void)
 			// ---------------- POST PROCESSING FX
 
 			// Depth Of Field
-			dof.Apply(renderer);
+			dof.Apply(renderer, ZNEAR, ZFAR);
 
 			// ---------------- User Interface
 			rotation += increment;
@@ -294,9 +300,15 @@ int main(void)
 				ImGui::Begin("Camera");
 				ImGui::Text("FPS (%.1f FPS)", ImGui::GetIO().Framerate);
 				ImGui::Text("Camera position");
-				ImGui::SliderFloat3("x y z", glm::value_ptr(camera.Position), -5000.0f, 5000.0f, nullptr, 5.0f);
+				ImGui::SliderFloat3("x y z", glm::value_ptr(camera.Position), -3000.0f, 3000.0f, nullptr, 5.0f);
 				if (ImGui::Button("Reset Camera"))
 					camera.Position = glm::vec3(0);
+				ImGui::Text("Depth of field");
+				ImGui::SliderFloat("Aperture Size", &dof.m_Aperture, 0.0f, 20.0f);
+				ImGui::SliderFloat("Focal Length", &dof.m_FocalLength, 0.0f, 20.0f);
+				ImGui::SliderFloat("Focus Plane", &dof.m_FocusPlane, 0.0f, 60.0f);
+				ImGui::InputFloat("Bleeding Mult", &dof.m_BleedingMult, 1.0f);
+				ImGui::InputFloat("Bleeding Bias", &dof.m_BleedingBias, 0.002f);
 				ImGui::End();
 
 				ImGui::Begin("Light");

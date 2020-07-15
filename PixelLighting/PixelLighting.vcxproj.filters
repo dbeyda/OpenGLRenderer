@@ -485,6 +485,7 @@
     <None Include="res\shaders\DoF\DepthOfField.shader" />
     <None Include="res\shaders\DoF\quad.shader" />
     <None Include="res\shaders\DoF\CircleOfConfusion.shader" />
+    <None Include="res\shaders\DoF\LineBlur.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VertexBuffer.h">
