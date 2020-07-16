@@ -12,7 +12,7 @@ has a focal length of 50mm.
 DepthOfField::DepthOfField(int scrWidth, int scrHeight, int cocWidth, int cocHeight)
 	: m_ScreenWidth(scrWidth), m_ScreenHeight(scrHeight), m_CocWidth(cocWidth), m_CocHeight(cocHeight),
 	m_FullscreenQuadShader(nullptr), m_FullscreenFbo(nullptr), m_CocFbo(nullptr), m_CocShader(nullptr),
-	m_Aperture(1.4f), m_FocusPlane(12.0f), m_FocalLength(1.4f), m_BleedingMult(30.0f), m_BleedingBias(0.02f),
+	m_Aperture(1.4f), m_FocusPlane(12.0f), m_FocalLength(1.4f),
 	m_BluredCocFbo(nullptr), m_BluredCocTex(nullptr), m_BlurShader(nullptr)
 {
 	if (!m_CocWidth) m_CocWidth = scrWidth;
@@ -170,9 +170,6 @@ void DepthOfField::Apply(Renderer& renderer, float znear, float zfar)
 	m_FullscreenQuadShader->SetUniform1i("samplers.MainSceneDepth", (signed int)m_DepthTex->GetRendererID());
 	m_FullscreenQuadShader->SetUniform1f("focalPlane", m_FocusPlane);
 	m_FullscreenQuadShader->SetUniform2f("viewportSize", (float) renderer.m_DefaultViewportWidth, (float) renderer.m_DefaultViewportHeight);
-	// TODO: fix this
-	m_FullscreenQuadShader->SetUniform1f("bleedingMult", m_BleedingMult); //m_BleedingMult);
-	m_FullscreenQuadShader->SetUniform1f("bleedingBias", m_BleedingBias); //m_BleedingBias);
 	// draw call
 	renderer.DrawFullscreenQuad(*m_FullscreenQuadShader);
 }

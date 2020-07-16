@@ -112,7 +112,7 @@ int main(void)
 		
 		Renderer renderer(SCR_WIDTH, SCR_HEIGHT);
 		DepthOfField dof(SCR_WIDTH, SCR_HEIGHT, SCR_WIDTH, SCR_HEIGHT);
-		dof.CompileFullscreenQuadShader("res/shaders/DoF/quad.shader");
+		dof.CompileFullscreenQuadShader("res/shaders/DoF/finalDoF.shader");
 		dof.CompileCocShader("res/shaders/DoF/CircleOfConfusion.shader");
 		dof.CompileBlurShader("res/shaders/DoF/LineBlur.shader");
 
@@ -307,8 +307,6 @@ int main(void)
 				ImGui::SliderFloat("Aperture Size", &dof.m_Aperture, 0.0f, 20.0f);
 				ImGui::SliderFloat("Focal Length", &dof.m_FocalLength, 0.0f, 20.0f);
 				ImGui::SliderFloat("Focus Plane", &dof.m_FocusPlane, 0.0f, 60.0f);
-				ImGui::InputFloat("Bleeding Mult", &dof.m_BleedingMult, 1.0f);
-				ImGui::InputFloat("Bleeding Bias", &dof.m_BleedingBias, 0.002f);
 				ImGui::End();
 
 				ImGui::Begin("Light");

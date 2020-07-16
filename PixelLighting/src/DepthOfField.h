@@ -24,7 +24,7 @@ public:
 	int m_ScreenWidth, m_ScreenHeight, m_CocWidth, m_CocHeight;
 	FrameBuffer *m_FullscreenFbo;
 	
-	float m_Aperture, m_FocusPlane, m_FocalLength, m_BleedingMult, m_BleedingBias;
+	float m_Aperture, m_FocusPlane, m_FocalLength;
 
 	DepthOfField(int scrWidth, int scrHeight, int cocWidth=0, int cocHeight=0);
 	~DepthOfField();

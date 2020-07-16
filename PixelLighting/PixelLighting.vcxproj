@@ -169,7 +169,7 @@
     <None Include="res\shaders\BasicTexture.shader" />
     <None Include="res\shaders\DoF\LineBlur.shader" />
     <None Include="res\shaders\DoF\CircleOfConfusion.shader" />
-    <None Include="res\shaders\DoF\quad.shader" />
+    <None Include="res\shaders\DoF\finalDoF.shader" />
     <None Include="res\shaders\DoF\DepthOfField.shader" />
     <None Include="res\shaders\Phong.shader" />
     <None Include="res\shaders\PhongBumpMap.shader" />
