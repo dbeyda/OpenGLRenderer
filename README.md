@@ -36,3 +36,18 @@ One light only soft shadow example:
 
 ![](https://github.com/dbeyda/OpenGLRenderer/blob/master/images/Shadow.jpg)
 
+## Dependencies
+* GLEW
+* GLFW 3.3
+* OpenGL 4+
+
+## Credits and Thanks
+[The Cherno's](https://www.youtube.com/channel/UCQ-W1KE9EYfdxhL6S4twUNw) youtube channel, for the Introduction to OpenGL Tutorials.
+
+Joey De Vries' [Learn OpenGL Tutorials](https://learnopengl.com/) for the incredible explanations and step-by-step guides.
+
+Waldemar Celes, for the teaching of Real-Time Rendering class at PUC-Rio.
+
+[Bernard Lupiac](https://github.com/blupiac) for the guidance and help with debugging.
+
+
