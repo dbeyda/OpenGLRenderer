@@ -1,6 +1,10 @@
 #pragma once
 
-#include "Renderer.h"
+#include "OpenGLHelper.h"
+
+#include "stb_image/stb_image.h"
+#include <string>
+
 
 class Texture 
 {

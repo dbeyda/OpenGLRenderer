@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VertexBuffer.h"
+#include "OpenGLHelper.h"
 
 class VertexBufferLayout;
 

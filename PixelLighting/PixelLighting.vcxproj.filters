@@ -66,6 +66,12 @@
     <ClCompile Include="src\ShadowMap.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
+    <ClCompile Include="src\Light.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DepthOfField.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\Basic.shader" />
@@ -476,6 +482,10 @@
     <None Include="res\shaders\PhongBumpMap.shader" />
     <None Include="res\shaders\ShadowMapGen.shader" />
     <None Include="res\shaders\PhongShadow.shader" />
+    <None Include="res\shaders\DoF\DepthOfField.shader" />
+    <None Include="res\shaders\DoF\CircleOfConfusion.shader" />
+    <None Include="res\shaders\DoF\LineBlur.shader" />
+    <None Include="res\shaders\DoF\finalDoF.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VertexBuffer.h">
@@ -1271,6 +1281,15 @@
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
     <ClInclude Include="src\ShadowMap.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Light.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DepthOfField.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
+    <ClInclude Include="src\OpenGLHelper.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
   </ItemGroup>

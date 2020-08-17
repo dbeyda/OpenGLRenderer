@@ -1,5 +1,4 @@
 #include "Model.h"
-#include "Obj.h"
 
 Model::Model(const std::string& label, const std::string& path, Renderer& renderer)
 	:m_HasAmbientTexture(0), m_HasDiffuseTexture(0),
