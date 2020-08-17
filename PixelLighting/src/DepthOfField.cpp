@@ -168,7 +168,6 @@ void DepthOfField::Apply(Renderer& renderer, float znear, float zfar)
 	m_FullscreenQuadShader->SetUniform1i("samplers.Coc", (signed int)m_CocTex->GetRendererID());
 	m_FullscreenQuadShader->SetUniform1i("samplers.MainSceneColor", (signed int)m_ColorTex->GetRendererID());
 	m_FullscreenQuadShader->SetUniform1i("samplers.MainSceneDepth", (signed int)m_DepthTex->GetRendererID());
-	m_FullscreenQuadShader->SetUniform1f("focalPlane", m_FocusPlane);
 	m_FullscreenQuadShader->SetUniform2f("viewportSize", (float) renderer.m_DefaultViewportWidth, (float) renderer.m_DefaultViewportHeight);
 	// draw call
 	renderer.DrawFullscreenQuad(*m_FullscreenQuadShader);
