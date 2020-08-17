@@ -487,6 +487,8 @@
     <None Include="res\shaders\DoF\LineBlur.shader" />
     <None Include="res\shaders\DoF\finalDoF.shader" />
     <None Include="res\shaders\DoF\TexToScreen.shader" />
+    <None Include="res\models\golfball\golfball.mtl" />
+    <None Include="res\models\stones\stones.mtl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VertexBuffer.h">
@@ -1293,5 +1295,20 @@
     <ClInclude Include="src\OpenGLHelper.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="res\models\golfball\golfball.obj" />
+    <Object Include="res\models\stones\stones.obj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\models\golfball\golfball.png">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="res\models\stones\stones.jpg">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="res\models\stones\stones_norm.jpg">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -165,6 +165,8 @@
     <ClCompile Include="src\VertexBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\models\golfball\golfball.mtl" />
+    <None Include="res\models\stones\stones.mtl" />
     <None Include="res\shaders\Basic.shader" />
     <None Include="res\shaders\BasicTexture.shader" />
     <None Include="res\shaders\DoF\TexToScreen.shader" />
@@ -580,6 +582,15 @@
     <ClInclude Include="src\VertexArray.h" />
     <ClInclude Include="src\VertexBuffer.h" />
     <ClInclude Include="src\VertexBufferLayout.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="res\models\golfball\golfball.obj" />
+    <Object Include="res\models\stones\stones.obj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\models\golfball\golfball.png" />
+    <Image Include="res\models\stones\stones.jpg" />
+    <Image Include="res\models\stones\stones_norm.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
