@@ -13,7 +13,7 @@ DepthOfField::DepthOfField(int scrWidth, int scrHeight, int cocWidth, int cocHei
 	: m_ScreenWidth(scrWidth), m_ScreenHeight(scrHeight), m_CocWidth(cocWidth), m_CocHeight(cocHeight),
 	m_FullscreenQuadShader(nullptr), m_FullscreenFbo(nullptr), m_CocFbo(nullptr), m_CocShader(nullptr),
 	m_Aperture(1.4f), m_FocusPlane(12.0f), m_FocalLength(1.4f),
-	m_BluredCocFbo(nullptr), m_BluredCocTex(nullptr), m_BlurShader(nullptr)
+	m_BluredCocFbo(nullptr), m_BluredCocTex(nullptr), m_BlurShader(nullptr), m_TexToScreenShader(nullptr), m_Active(false)
 {
 	if (!m_CocWidth) m_CocWidth = scrWidth;
 	if (!m_CocHeight) m_CocHeight = scrHeight;
@@ -32,6 +32,7 @@ DepthOfField::~DepthOfField()
 	delete m_BluredCocFbo;
 	delete m_BluredCocTex;
 	delete m_BlurShader;
+	delete m_TexToScreenShader;
 }
 
 void DepthOfField::InitEffect()
@@ -109,6 +110,11 @@ void DepthOfField::CompileBlurShader(const std::string& filename)
 	m_BlurShader = new Shader(filename);
 }
 
+void DepthOfField::CompileTexToScreenShader(const std::string& filename)
+{
+	m_TexToScreenShader = new Shader(filename);
+}
+
 void DepthOfField::RenderCircleOfConfusion(Renderer& renderer, float znear, float zfar)
 {
 	renderer.SetRenderTarget(m_CocFbo);
@@ -149,26 +155,42 @@ void DepthOfField::BlurCoc(Renderer& renderer)
 
 void DepthOfField::Apply(Renderer& renderer, float znear, float zfar)
 {
-	RenderCircleOfConfusion(renderer, znear, zfar);
-	//BlurCoc(renderer);
+	if (m_Active)
+	{
+		RenderCircleOfConfusion(renderer, znear, zfar);
+		//BlurCoc(renderer);
 
-	renderer.ResetRenderTarget();
-	renderer.Clear();
+		renderer.ResetRenderTarget();
+		renderer.Clear();
 	
-	// preparing textures
-	//m_BluredCocTex->Bind();
-	m_CocTex->Bind();
+		// preparing textures
+		//m_BluredCocTex->Bind();
+		m_CocTex->Bind();
 
-	m_ColorTex->Bind();
-	m_DepthTex->Bind();
-	// preparing shader
-	m_FullscreenQuadShader->Bind();
+		m_ColorTex->Bind();
+		m_DepthTex->Bind();
+		// preparing shader
+		m_FullscreenQuadShader->Bind();
 
-	//m_FullscreenQuadShader->SetUniform1i("samplers.Coc", (signed int)m_BluredCocTex->GetRendererID());
-	m_FullscreenQuadShader->SetUniform1i("samplers.Coc", (signed int)m_CocTex->GetRendererID());
-	m_FullscreenQuadShader->SetUniform1i("samplers.MainSceneColor", (signed int)m_ColorTex->GetRendererID());
-	m_FullscreenQuadShader->SetUniform1i("samplers.MainSceneDepth", (signed int)m_DepthTex->GetRendererID());
-	m_FullscreenQuadShader->SetUniform2f("viewportSize", (float) renderer.m_DefaultViewportWidth, (float) renderer.m_DefaultViewportHeight);
-	// draw call
-	renderer.DrawFullscreenQuad(*m_FullscreenQuadShader);
+		//m_FullscreenQuadShader->SetUniform1i("samplers.Coc", (signed int)m_BluredCocTex->GetRendererID());
+		m_FullscreenQuadShader->SetUniform1i("samplers.Coc", (signed int)m_CocTex->GetRendererID());
+		m_FullscreenQuadShader->SetUniform1i("samplers.MainSceneColor", (signed int)m_ColorTex->GetRendererID());
+		m_FullscreenQuadShader->SetUniform1i("samplers.MainSceneDepth", (signed int)m_DepthTex->GetRendererID());
+		m_FullscreenQuadShader->SetUniform2f("viewportSize", (float) renderer.m_DefaultViewportWidth, (float) renderer.m_DefaultViewportHeight);
+		// draw call
+		renderer.DrawFullscreenQuad(*m_FullscreenQuadShader);
+	}
+	else
+	{
+		renderer.ResetRenderTarget();
+		renderer.Clear();
+
+		m_ColorTex->Bind();
+		m_TexToScreenShader->Bind();
+
+		m_TexToScreenShader->SetUniform1i("samplers.MainSceneColor", (signed int)m_ColorTex->GetRendererID());
+		m_TexToScreenShader->SetUniform2f("viewportSize", (float)renderer.m_DefaultViewportWidth, (float)renderer.m_DefaultViewportHeight);
+
+		renderer.DrawFullscreenQuad(*m_TexToScreenShader);
+	}
 }

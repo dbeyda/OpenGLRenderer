@@ -115,6 +115,7 @@ int main(void)
 		dof.CompileFullscreenQuadShader("res/shaders/DoF/finalDoF.shader");
 		dof.CompileCocShader("res/shaders/DoF/CircleOfConfusion.shader");
 		dof.CompileBlurShader("res/shaders/DoF/LineBlur.shader");
+		dof.CompileTexToScreenShader("res/shaders/DoF/TexToScreen.shader");
 
 
 		// ----------- Models
@@ -304,6 +305,7 @@ int main(void)
 				if (ImGui::Button("Reset Camera"))
 					camera.Position = glm::vec3(0);
 				ImGui::Text("Depth of field");
+				ImGui::Checkbox("Active", &dof.m_Active);
 				ImGui::SliderFloat("Aperture Size", &dof.m_Aperture, 0.0f, 20.0f);
 				ImGui::SliderFloat("Focal Length", &dof.m_FocalLength, 0.0f, 20.0f);
 				ImGui::SliderFloat("Focus Plane", &dof.m_FocusPlane, 0.0f, 60.0f);

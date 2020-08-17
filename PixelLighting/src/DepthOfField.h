@@ -18,11 +18,12 @@ private:
 
 	Texture* m_ColorTex, * m_DepthTex, * m_CocTex, * m_BluredCocTex;
 	FrameBuffer* m_CocFbo, * m_BluredCocFbo;
-	Shader *m_FullscreenQuadShader, *m_CocShader, *m_BlurShader;
+	Shader *m_FullscreenQuadShader, *m_CocShader, *m_BlurShader, *m_TexToScreenShader;
 
 public:
 	int m_ScreenWidth, m_ScreenHeight, m_CocWidth, m_CocHeight;
 	FrameBuffer *m_FullscreenFbo;
+	bool m_Active;
 	
 	float m_Aperture, m_FocusPlane, m_FocalLength;
 
@@ -33,6 +34,7 @@ public:
 	void CompileFullscreenQuadShader(const std::string& filename);
 	void CompileCocShader(const std::string& filename);
 	void CompileBlurShader(const std::string& filename);
+	void CompileTexToScreenShader(const std::string& filename);
 
 	// TODO: since now image is rendered to a texture of fixed size, resizing window might break everything
 };
