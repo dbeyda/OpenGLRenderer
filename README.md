@@ -3,7 +3,9 @@
 
  This project is a 3D renderer developed as an introduction to real-time rendering.
  It was developed mainly during PUC-Rio's Real-Time Rendering class, and then further improved over winter recess.
- Credits for resources that made this possible are at the bottom of the page.
+ Credits for people and materials that help me are at the bottom of the page.
+ 
+ The Depth of Field implementation was a final assignment for the class. [Here you can check out the final report](https://github.com/dbeyda/OpenGLRenderer/blob/master/David%20Beyda%20-%20Depth%20Of%20Field%20Report.pdf) and more information about the techniques used. 
  
  ## Features:
  * Load `.obj` files for meshes.
